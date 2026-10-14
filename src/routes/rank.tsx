@@ -79,7 +79,9 @@ function RankPage() {
 
   const q = useQuery({
     queryKey: ["rank_users_v3", category, period, scope, scopeValue],
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("rank_users", { 
         p_category: category, p_period: period, p_scope: scope, p_scope_value: scopeValue, p_limit: 50 
@@ -100,7 +102,9 @@ function RankPage() {
   const meQ = useQuery({ 
     queryKey: ["rank_me_v2", category, period, scope, scopeValue, user?.id], 
     enabled: !!user?.id, 
-    staleTime: 30_000, 
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnWindowFocus: false, 
     queryFn: async () => { 
       const { data, error } = await supabase.rpc("rank_me", { 
         p_category: category, p_period: period, p_scope: scope, p_scope_value: scopeValue 
@@ -124,7 +128,7 @@ function RankPage() {
           
           <header className="relative z-20 px-3 pb-2" style={{ paddingTop: "max(14px, env(safe-area-inset-top))" }}>
             <div className="mx-auto grid max-w-[430px] grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2 px-1 pt-1">
-              <button onClick={() => router.history.back()} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#2A154A]/50 text-white backdrop-blur-xl shadow-sm">
+              <button onClick={() => router.history.back()} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#2A154A]/50 text-white  shadow-sm">
                 <ArrowLeft className="h-5 w-5" />
               </button>
               
@@ -136,7 +140,7 @@ function RankPage() {
                 <h1 className="mt-1 font-serif text-[30px] font-extrabold italic leading-none tracking-tight text-white drop-shadow-md">Rankings</h1>
               </div>
               
-              <button onClick={() => setHelpOpen(true)} className="ml-auto grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#2A154A]/50 text-white backdrop-blur-xl shadow-sm">
+              <button onClick={() => setHelpOpen(true)} className="ml-auto grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#2A154A]/50 text-white  shadow-sm">
                 <HelpCircle className="h-[18px] w-[18px]" />
               </button>
             </div>
@@ -161,7 +165,7 @@ function RankPage() {
             
             {/* Period Toggles & Country Select */}
             <div className="mx-auto mt-3.5 flex max-w-[430px] items-center justify-between gap-2 px-1">
-              <div className="flex items-center gap-1 rounded-full border border-white/10 bg-[#1D0C33]/80 p-1 shadow-inner backdrop-blur-xl">
+              <div className="flex items-center gap-1 rounded-full border border-white/10 bg-[#1D0C33]/80 p-1 shadow-inner ">
                 {PERIODS.map(({ k, label }) => { 
                   const active = period === k; 
                   return (
@@ -177,7 +181,7 @@ function RankPage() {
 
           {/* Podium Section */}
           <section className="relative z-10 mx-auto mt-5 max-w-[430px] px-2">
-            <div className="relative overflow-visible rounded-[34px] border border-white/10 bg-[#251142]/60 px-1.5 pb-5 pt-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+            <div className="relative overflow-visible rounded-[34px] border border-white/10 bg-[#251142]/60 px-1.5 pb-5 pt-5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
               <div className="pointer-events-none absolute inset-0 rounded-[34px] bg-gradient-to-b from-yellow-500/10 via-transparent to-transparent" />
               
               <div className="relative mb-8 flex items-center justify-center gap-2">
@@ -210,10 +214,10 @@ function RankPage() {
             
             {q.isLoading ? (
               <div className="space-y-2.5">
-                {[1,2,3,4].map(i => <div key={i} className="h-[68px] animate-pulse rounded-2xl border border-white/10 bg-[#251142]/40 backdrop-blur-md" />)}
+                {[1,2,3,4].map(i => <div key={i} className="h-[68px] animate-pulse rounded-2xl border border-white/10 bg-[#251142]/40 " />)}
               </div>
             ) : q.isError ? (
-              <div className="rounded-2xl border border-red-500/30 bg-[#1A0B2E] p-6 text-center text-xs text-red-400 backdrop-blur-xl">
+              <div className="rounded-2xl border border-red-500/30 bg-[#1A0B2E] p-6 text-center text-xs text-red-400 ">
                 Rankings could not be synced securely. Please retry.
               </div>
             ) : rest.length === 0 && list.length <= 3 ? (
@@ -251,7 +255,7 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
   const avatarOuter = first ? "h-[82px] w-[82px] sm:h-[92px] sm:w-[92px]" : "h-[68px] w-[68px] sm:h-[76px] sm:w-[76px]";
   
   const content = (
-    <div className={`group relative flex w-full flex-col items-center overflow-visible rounded-[26px] border border-white/10 bg-gradient-to-b ${first ? 'from-[#3A1B60]/90 to-[#190930]/90 border-yellow-500/30' : 'from-[#251142]/90 to-[#120624]/90'} px-1.5 pb-3.5 pt-4 shadow-xl backdrop-blur-xl ${cardHeight} ${cardWidth}`}>
+    <div className={`group relative flex w-full flex-col items-center overflow-visible rounded-[26px] border border-white/10 bg-gradient-to-b ${first ? 'from-[#3A1B60]/90 to-[#190930]/90 border-yellow-500/30' : 'from-[#251142]/90 to-[#120624]/90'} px-1.5 pb-3.5 pt-4 shadow-xl  ${cardHeight} ${cardWidth}`}>
       <img src={rankImage} alt={`Top ${place} ranking`} className="pointer-events-none absolute inset-0 h-full w-full rounded-[26px] object-cover opacity-55" />
       <div className="pointer-events-none absolute inset-0 rounded-[26px] bg-gradient-to-b from-[#120624]/45 via-[#120624]/65 to-[#08010F]/90" />
       
@@ -299,7 +303,7 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
         <p className={`text-[13px] font-black tracking-tight ${first ? "text-yellow-400 drop-shadow-md" : "text-white"}`}>{formatScore(row?.score ?? 0)}</p>
       </div>
       
-      {!row && <div className="absolute inset-0 rounded-[26px] bg-[#0A0210]/60 backdrop-blur-[2px]" />}
+      {!row && <div className="absolute inset-0 rounded-[26px] bg-[#0A0210]/60" />}
     </div>
   );
   
@@ -338,7 +342,7 @@ function MyRankCard({ row, fallback }: { row: Row | null; fallback: any }) {
   const level = row?.level ?? fallback?.level ?? 1; 
   return (
     <div className="fixed inset-x-0 bottom-[72px] z-40 px-3">
-      <div className="mx-auto max-w-[430px] rounded-[24px] border border-yellow-500/30 bg-[#251142]/95 p-3 shadow-[0_-10px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+      <div className="mx-auto max-w-[430px] rounded-[24px] border border-yellow-500/30 bg-[#251142]/95 p-3 shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
         <div className="grid grid-cols-[46px_46px_minmax(0,1fr)_auto] items-center gap-2.5">
           <div className="text-center bg-[#10051C] py-1 rounded-xl border border-white/10">
             <p className="text-[7px] font-black uppercase tracking-wider text-white/50">My Rank</p>
@@ -390,7 +394,7 @@ function CountrySelect({ value, onChange, compact = false }: { value: string; on
         <ArrowUpDown className="h-3 w-3 text-yellow-400" />
       </button>
       {open && (
-          <div className="absolute right-0 z-50 mt-2 max-h-64 w-48 overflow-auto rounded-2xl border border-white/10 bg-[#1D0C33] p-1.5 shadow-[0_15px_40px_rgba(0,0,0,0.8)] backdrop-blur-2xl no-scrollbar">
+          <div className="absolute right-0 z-50 mt-2 max-h-64 w-48 overflow-auto rounded-2xl border border-white/10 bg-[#1D0C33] p-1.5 shadow-[0_15px_40px_rgba(0,0,0,0.8)] no-scrollbar">
             {options.map(c => (
               <button key={c} onClick={() => { onChange(c); setOpen(false) }} className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold transition-colors ${value === c ? "bg-yellow-500/20 text-yellow-400 font-bold border border-yellow-500/30" : "text-white/70 hover:bg-[#2A154A] hover:text-white"}`}>
                 <span>{c === "Global" ? "🌐" : (COUNTRY_FLAG[c] ?? "🏳️")}</span>
@@ -417,8 +421,8 @@ function EmptyState() {
 
 function HelpModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4 backdrop-blur-md" onClick={onClose}>
-      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#1D0C33] p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4 " onClick={onClose}>
+      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#1D0C33] p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)]" onClick={e => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-base font-extrabold text-white">
             <ShieldCheck className="h-5 w-5 text-yellow-400" /> Ranking Guidelines
