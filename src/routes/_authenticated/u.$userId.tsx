@@ -93,6 +93,8 @@ function UserProfilePage() {
 
   const prof = useQuery({
     queryKey: ["public-profile", userId, me?.id],
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .rpc("get_profile_public", { _id: userId })
@@ -151,6 +153,8 @@ function UserProfilePage() {
 
   const stats = useQuery({
     queryKey: ["public-profile-stats", userId],
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     queryFn: async () => {
       const [followers, following, xpRank, hostRooms, visitors] = await Promise.all([
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", userId),
@@ -230,6 +234,8 @@ function UserProfilePage() {
 
   const publicGallery = useQuery({
     queryKey: ["user-public-gallery", userId],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gallery_images")
@@ -274,6 +280,8 @@ function UserProfilePage() {
 
   const ownedItems = useQuery({
     queryKey: ["user-owned-items", userId],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_themes")
@@ -289,6 +297,8 @@ function UserProfilePage() {
 
   const equippedCard = useQuery({
     queryKey: ["equipped-profile-card", userId],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("user_profile_cards")
@@ -464,14 +474,14 @@ function UserProfilePage() {
         >
           <button
             onClick={() => nav({ to: "/" })}
-            className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-xl transition hover:bg-white/10"
+            className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-white  transition hover:bg-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="flex items-center gap-2">
             <button
               onClick={shareProfile}
-              className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-xl transition hover:bg-white/10"
+              className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-white  transition hover:bg-white/10"
               aria-label="Share profile"
             >
               <Share2 className="h-4 w-4" />
@@ -480,7 +490,7 @@ function UserProfilePage() {
               <>
                 <button
                   onClick={() => report.mutate()}
-                  className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-amber-300 backdrop-blur-xl transition hover:bg-white/10"
+                  className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-amber-300  transition hover:bg-white/10"
                   aria-label="Report"
                 >
                   <Flag className="h-4 w-4" />
@@ -489,7 +499,7 @@ function UserProfilePage() {
                   onClick={() => {
                     if (confirm("Block this user?")) block.mutate();
                   }}
-                  className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-red-400 backdrop-blur-xl transition hover:bg-white/10"
+                  className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-red-400  transition hover:bg-white/10"
                   aria-label="Block"
                 >
                   <Ban className="h-4 w-4" />
@@ -512,7 +522,7 @@ function UserProfilePage() {
 
         {/* Hero card */}
         <div className="relative z-10 mx-4 mt-3">
-          <div className="relative rounded-[28px] border border-white/10 bg-white/[0.04] p-5 pt-10 backdrop-blur-2xl shadow-[0_20px_60px_-20px_rgba(168,85,247,0.55)]">
+          <div className="relative rounded-[28px] border border-white/10 bg-white/[0.04] p-5 pt-10  shadow-[0_20px_60px_-20px_rgba(168,85,247,0.55)]">
             {effectiveProfileFrame ? (
               <div className="pointer-events-none absolute -inset-[2px] z-30 overflow-visible rounded-[28px]" aria-hidden>
                 <ProfileCardFrame card={effectiveProfileFrame} />
@@ -723,7 +733,7 @@ function UserProfilePage() {
           <Link
             to="/room/$roomId"
             params={{ roomId: currentLive.data.id }}
-            className="mx-4 mt-4 flex items-center gap-3 overflow-hidden rounded-2xl border border-emerald-400/40 bg-gradient-to-r from-emerald-500/20 via-emerald-500/10 to-transparent p-3 backdrop-blur-xl transition hover:from-emerald-500/30"
+            className="mx-4 mt-4 flex items-center gap-3 overflow-hidden rounded-2xl border border-emerald-400/40 bg-gradient-to-r from-emerald-500/20 via-emerald-500/10 to-transparent p-3  transition hover:from-emerald-500/30"
           >
             <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-black/40">
               {currentLive.data.cover ? (
@@ -746,267 +756,3 @@ function UserProfilePage() {
                   <Eye className="h-3 w-3" /> {currentLive.data.viewer_count ?? 0}
                 </span>
               </p>
-            </div>
-            <span className="rounded-full bg-emerald-400 px-3 py-1.5 text-[11px] font-black text-emerald-950">
-              Join
-            </span>
-          </Link>
-        )}
-
-        {/* Stats dashboard */}
-        <div className="mx-4 mt-4 grid grid-cols-3 gap-2">
-          <Stat label="Followers" value={compact(stats.data?.followers ?? 0)} icon={<Users className="h-3 w-3 text-fuchsia-300" />} />
-          <Stat label="Following" value={compact(stats.data?.following ?? 0)} icon={<UserPlus className="h-3 w-3 text-violet-300" />} />
-          <Stat label="Visitors" value={compact(stats.data?.visitors ?? 0)} icon={<Eye className="h-3 w-3 text-cyan-300" />} />
-          <Stat label="Rank" value={stats.data?.rank ? `#${compact(stats.data.rank)}` : "—"} icon={<Trophy className="h-3 w-3 text-[color:var(--gold)]" />} />
-          <Stat label="Level" value={p.level ?? 0} icon={<Sparkles className="h-3 w-3 text-amber-300" />} />
-          <Stat label="Popularity" value={compact(Number(p.total_gifted_coins ?? 0))} icon={<Flame className="h-3 w-3 text-orange-400" />} />
-        </div>
-
-        {(isMe || isAdmin) && (
-          <div className="mx-4 mt-2 grid grid-cols-2 gap-2">
-            <Stat label="Coins" value={compact(p.coins)} icon={<Coins className="h-3 w-3 text-[color:var(--gold)]" />} />
-            <Stat label="Diamonds" value={compact(p.diamonds)} icon={<Gem className="h-3 w-3 text-cyan-400" />} />
-          </div>
-        )}
-
-        {/* VIP progress */}
-        <div className="mx-4 mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-xl">
-          <p className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[color:var(--gold)]">
-            <Crown className="h-3 w-3" /> VIP Progression
-          </p>
-          <VipProgressBar
-            totalGifted={Number(p.total_gifted_coins ?? 0)}
-            storedLevel={p.vip_level ?? 0}
-          />
-        </div>
-
-        {/* Public gallery */}
-        {(publicGallery.data?.length ?? 0) > 0 && (
-          <SectionCard icon={<Images className="h-3 w-3" />} title="Gallery">
-            <div className="grid grid-cols-3 gap-2">
-              {publicGallery.data!.map((img) => (
-                <a
-                  key={img.id}
-                  href={img.path}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group relative aspect-square overflow-hidden rounded-xl bg-black/40"
-                >
-                  <img src={img.path} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
-                </a>
-              ))}
-            </div>
-          </SectionCard>
-        )}
-
-        {/* Private album */}
-        {!isMe && (
-          <div className="mx-4 mt-4 rounded-2xl border border-[color:var(--gold)]/30 bg-gradient-to-br from-[color:var(--gold)]/10 to-transparent p-3 backdrop-blur-xl">
-            <p className="mb-2 flex items-center gap-2 text-xs font-black text-[color:var(--gold)]">
-              <Lock className="h-3.5 w-3.5" /> Private Album
-            </p>
-            {albumAccess.data === "accepted" ? (
-              (privateGallery.data?.length ?? 0) > 0 ? (
-                <div className="grid grid-cols-3 gap-2">
-                  {privateGallery.data!.map((img) => (
-                    <a
-                      key={img.id}
-                      href={img.path}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="aspect-square overflow-hidden rounded-xl bg-black/40"
-                    >
-                      <img src={img.path} alt="" className="h-full w-full object-cover" />
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-white/60">Access granted — koi private photo nahi hai</p>
-              )
-            ) : albumAccess.data === "pending" ? (
-              <p className="text-xs text-white/60">Request bheji ja chuki — approval ka intezaar</p>
-            ) : albumAccess.data === "revoked" ? (
-              <p className="text-xs text-red-400">Access revoked</p>
-            ) : (
-              <button
-                onClick={() => requestAlbum.mutate()}
-                disabled={requestAlbum.isPending}
-                className="w-full rounded-full bg-gradient-to-r from-[color:var(--gold)] to-amber-500 py-2 text-xs font-black text-black shadow-[0_8px_24px_-8px_rgba(255,200,80,0.6)] disabled:opacity-60"
-              >
-                {requestAlbum.isPending ? "Bhej rahe hain…" : "Request Access"}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Owned decorations */}
-        {(ownedItems.data?.length ?? 0) > 0 && (
-          <SectionCard
-            icon={<Sparkles className="h-3 w-3 text-[color:var(--gold)]" />}
-            title={`Owned Decorations · ${ownedItems.data!.length}`}
-          >
-            <div className="grid grid-cols-3 gap-2">
-              {ownedItems.data!.map((row: any) => {
-                const t = row.themes;
-                const cat = t?.theme_categories;
-                const slug = (cat?.slug ?? "").toLowerCase();
-                const media = t.preview_url || t.bg_image || t.animation_url;
-                const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
-                return (
-                  <div
-                    key={t.id}
-                    className="relative overflow-hidden rounded-xl border border-white/10 p-2"
-                    style={{
-                      background: `linear-gradient(160deg, ${t.primary_color ?? "#5b21b6"}33, ${t.accent_color ?? "#ec4899"}33)`,
-                    }}
-                  >
-                    <div className="aspect-square w-full overflow-hidden rounded-lg bg-black/40">
-                      {media && !isVideo ? (
-                        <img src={media} alt={t.name} loading="lazy" className="h-full w-full object-cover" />
-                      ) : isVideo ? (
-                        <video src={media} muted loop autoPlay playsInline className="h-full w-full object-cover" />
-                      ) : (
-                        <ItemAnimation
-                          slug={slug}
-                          name={displayName}
-                          primary={t.primary_color ?? "#7c3aed"}
-                          accent={t.accent_color ?? "#ec4899"}
-                          fill
-                        />
-                      )}
-                    </div>
-                    <div className="mt-1.5 truncate text-[10px] font-bold text-white">{t.name}</div>
-                    <div className="text-[9px] uppercase tracking-wider text-white/50">{cat?.name ?? ""}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </SectionCard>
-        )}
-
-        {/* Footer info */}
-        <div className="mx-4 mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-[11px] text-white/60 backdrop-blur-xl">
-          <div className="flex items-center justify-between">
-            <span>Profile Created</span>
-            <span className="font-bold text-white/80">{joined}</span>
-          </div>
-          <div className="mt-1 flex items-center justify-between">
-            <span>Last Seen</span>
-            <span className="font-bold text-white/80">
-              {p.last_seen
-                ? new Date(p.last_seen).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
-                : "—"}
-            </span>
-          </div>
-          <div className="mt-1 flex items-center justify-between">
-            <span>Safety</span>
-            <span className="flex items-center gap-1 font-bold text-emerald-400">
-              <ShieldCheck className="h-3 w-3" /> Verified
-            </span>
-          </div>
-        </div>
-
-        <div className="h-24" />
-      </div>
-      <BottomNav />
-    </AppShell>
-  );
-}
-
-function CornerBrackets() {
-  const cls = "pointer-events-none absolute h-6 w-6 border-[color:var(--gold)]";
-  return (
-    <>
-      <span className={`${cls} left-2 top-2 border-l-2 border-t-2 rounded-tl-2xl`} />
-      <span className={`${cls} right-2 top-2 border-r-2 border-t-2 rounded-tr-2xl`} />
-      <span className={`${cls} left-2 bottom-2 border-l-2 border-b-2 rounded-bl-2xl`} />
-      <span className={`${cls} right-2 bottom-2 border-r-2 border-b-2 rounded-br-2xl`} />
-    </>
-  );
-}
-
-function Achievement({ icon, label, color }: { icon: React.ReactNode; label: string; color: string }) {
-  return (
-    <span className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r ${color} px-2 py-0.5 text-[10px] font-black text-white shadow-[0_4px_12px_-4px_rgba(0,0,0,0.6)]`}>
-      {icon}
-      {label}
-    </span>
-  );
-}
-
-function QuickAction({
-  icon,
-  label,
-  onClick,
-  tone,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  tone: "gold" | "violet" | "cyan" | "pink";
-}) {
-  const tones: Record<string, string> = {
-    gold: "from-amber-400/20 to-amber-600/10 text-amber-300 border-amber-400/30",
-    violet: "from-violet-400/20 to-violet-700/10 text-violet-200 border-violet-400/30",
-    cyan: "from-cyan-400/20 to-cyan-700/10 text-cyan-200 border-cyan-400/30",
-    pink: "from-pink-400/20 to-fuchsia-700/10 text-pink-200 border-pink-400/30",
-  };
-  return (
-    <button
-      onClick={onClick}
-      className={`flex flex-col items-center gap-1 rounded-2xl border bg-gradient-to-br ${tones[tone]} py-2.5 text-[10px] font-black backdrop-blur-xl transition active:scale-95`}
-    >
-      <span className="grid h-8 w-8 place-items-center rounded-full bg-white/10">{icon}</span>
-      {label}
-    </button>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string | number;
-  icon?: React.ReactNode;
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center backdrop-blur-xl">
-      <div className="pointer-events-none absolute inset-x-0 -top-8 h-16 bg-[radial-gradient(closest-side,rgba(168,85,247,0.35),transparent)] opacity-70" />
-      <div className="relative text-lg font-black text-white">{value}</div>
-      <div className="relative mt-0.5 flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-white/60">
-        {icon}
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function SectionCard({
-  icon,
-  title,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="mx-4 mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-xl">
-      <p className="mb-2 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/60">
-        {icon}
-        {title}
-      </p>
-      {children}
-    </div>
-  );
-}
-
-function compact(n: number): string {
-  if (n < 1000) return String(n);
-  if (n < 1_000_000) return `${(n / 1000).toFixed(n < 10_000 ? 1 : 0)}K`;
-  if (n < 1_000_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  return `${(n / 1_000_000_000).toFixed(1)}B`;
-}
