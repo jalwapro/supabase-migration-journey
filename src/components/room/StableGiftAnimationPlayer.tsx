@@ -1,3 +1,4 @@
+const giftConfigCache = new Map<string, any>();
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT_FIT, type GiftRenderConfig } from "@/lib/giftRender";
@@ -52,7 +53,14 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const enqueue = useCallback((row: GiftRow) => { if (!row?.id || seenRef.current.has(row.id)) return; seenRef.current.add(row.id); seenOrderRef.current.push(row.id); if (seenOrderRef.current.length > 500) { const old = seenOrderRef.current.shift(); if (old) seenRef.current.delete(old); } if (activeRef.current) queueRef.current.push(row); else { activeRef.current = row; setMediaStarted(false); setMediaDurationMs(null); setActive(row); } }, []);
   const hydrateRenderConfig = useCallback(async (row: GiftRow): Promise<GiftRow> => {
     if (!row.gift_id) return row;
-    const { data } = await supabase.from("gifts").select("render_config,clip_path,clip_type,image_url,icon,icon_path,emoji,sound_url,animation,duration_ms,loop,price_coins,price,chromakey").eq("id", row.gift_id).maybeSingle();
+    let data = giftConfigCache.get(row.gift_id);
+    if (!data) {
+      const res = await supabase.from("gifts").select("render_config,clip_path,clip_type,image_url,icon,icon_path,emoji,sound_url,animation,duration_ms,loop,price_coins,price,chromakey").eq("id", row.gift_id).maybeSingle();
+      if (res.data) {
+        data = res.data;
+        giftConfigCache.set(row.gift_id, data);
+      }
+    }
     if (!data) return row;
     return { ...row, gift_chromakey: row.gift_chromakey ?? (data as any).chromakey ?? null, gift_render_config: (data as any).render_config ?? row.gift_render_config ?? null, gift_clip_path: row.gift_clip_path ?? (data as any).clip_path ?? null, gift_clip_type: row.gift_clip_type ?? (data as any).clip_type ?? null, gift_image_url: row.gift_image_url ?? (data as any).image_url ?? null, gift_icon: row.gift_icon ?? (data as any).icon ?? null, gift_icon_path: row.gift_icon_path ?? (data as any).icon_path ?? null, gift_emoji: row.gift_emoji ?? (data as any).emoji ?? null, gift_audio_url: row.gift_audio_url ?? (data as any).sound_url ?? null, gift_duration_ms: row.gift_duration_ms ?? (data as any).duration_ms ?? null, gift_loop: row.gift_loop ?? false, gift_price_coins: row.gift_price_coins ?? num((data as any).price_coins ?? (data as any).price, 0) };
   }, []);
@@ -136,7 +144,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
             }
           }
           enqueue(receiverIds.length ? { ...primary, receiver_id: receiverIds[0], receiver_ids: receiverIds } : primary);
-        }, 1400);
+        }, 120);
         pendingDbRef.current.set(row.id, timer);
       });
     };
