@@ -18,14 +18,14 @@ export function EmojiSheet({ open, emojis, onClose, onSelect }: EmojiSheetProps)
 
   return (
     <div
-      className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/60 "
       role="dialog"
       aria-modal="true"
       aria-label="Animated Emojis"
       onClick={onClose}
     >
       <section
-        className="w-full max-w-md rounded-t-[28px] border-t border-white/10 bg-[#100719]/98 p-4 pb-7 text-white shadow-2xl backdrop-blur-xl animate-slide-up"
+        className="w-full max-w-md rounded-t-[28px] border-t border-white/10 bg-[#100719]/98 p-4 pb-7 text-white shadow-2xl  animate-slide-up"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/20" />
