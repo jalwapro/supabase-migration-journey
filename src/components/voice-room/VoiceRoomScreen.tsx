@@ -239,8 +239,8 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover opacity-90" /></div> : null}
       
       {showPinModal && (
-        <div className="absolute inset-0 z-[2147483000] flex items-center justify-center bg-black/40 backdrop-blur-md px-4 animate-fade-in">
-          <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900/90 border p-6 shadow-2xl text-center backdrop-blur-xl" style={{ borderColor: `${primaryThemeColor}66` }}>
+        <div className="absolute inset-0 z-[2147483000] flex items-center justify-center bg-black/40  px-4 animate-fade-in">
+          <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-[#120924] border p-6 shadow-2xl text-center " style={{ borderColor: `${primaryThemeColor}66` }}>
             <div className="h-16 w-16 rounded-full flex items-center justify-center mb-4 shadow-lg" style={{ backgroundColor: `${primaryThemeColor}20`, color: primaryThemeColor, border: `1px solid ${primaryThemeColor}` }}>
               <Lock className="h-8 w-8 animate-pulse" />
             </div>
@@ -256,8 +256,8 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       )}
 
       {generatedPin && isHost && (
-        <div className="absolute inset-0 z-[2147483000] flex items-center justify-center bg-black/40 backdrop-blur-md px-4 animate-fade-in">
-          <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900/90 border p-6 shadow-2xl text-center backdrop-blur-xl" style={{ borderColor: `${accentThemeColor}66` }}>
+        <div className="absolute inset-0 z-[2147483000] flex items-center justify-center bg-black/40  px-4 animate-fade-in">
+          <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-[#120924] border p-6 shadow-2xl text-center " style={{ borderColor: `${accentThemeColor}66` }}>
             <div className="h-14 w-14 rounded-full flex items-center justify-center mb-3 shadow-lg" style={{ backgroundColor: `${accentThemeColor}20`, color: accentThemeColor, border: `1px solid ${accentThemeColor}` }}>
               <KeyRound className="h-7 w-7" />
             </div>
@@ -270,8 +270,8 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       )}
 
       {showHostFreePopup && isHost && (
-        <div className="absolute inset-0 z-[2147483000] flex items-center justify-center bg-black/40 backdrop-blur-md animate-fade-in px-4">
-          <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900/90 border p-6 shadow-2xl text-center backdrop-blur-xl" style={{ borderColor: `${primaryThemeColor}66` }}>
+        <div className="absolute inset-0 z-[2147483000] flex items-center justify-center bg-black/40  animate-fade-in px-4">
+          <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-[#120924] border p-6 shadow-2xl text-center " style={{ borderColor: `${primaryThemeColor}66` }}>
             <div className="absolute -top-10 animate-bounce">
               <div className="h-20 w-20 rounded-full p-1 shadow-xl" style={{ background: `linear-gradient(135deg, ${primaryThemeColor}, ${accentThemeColor})` }}>
                 <div className="h-full w-full rounded-full bg-black flex items-center justify-center overflow-hidden"><img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-14 w-14 object-contain" /></div>
@@ -288,7 +288,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       )}
 
       {showRocketAnimation && (
-        <div className="absolute inset-0 z-[2147483100] pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-md animate-fade-in">
+        <div className="absolute inset-0 z-[2147483100] pointer-events-none flex items-center justify-center bg-black/40  animate-fade-in">
           <div className="flex flex-col items-center">
             <div className="relative animate-bounce">
               <div className="absolute -inset-8 rounded-full opacity-90 blur-2xl animate-pulse" style={{ background: `linear-gradient(90deg, ${primaryThemeColor}, ${accentThemeColor})` }} />
@@ -309,7 +309,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
           
           <div data-jalwa-live-component="voice.announcement" className="shrink-0 flex flex-col gap-1 px-2 pb-0.5">
             <section data-voice-room-lower-panel="true" className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
-              <div className="flex min-w-0 max-h-[190px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
+              <div className="flex min-w-0 max-h-[190px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50  shadow-xl">
                 <div className="flex h-6 shrink-0 items-center gap-1.5 border-b border-white/10 px-2 bg-amber-500/10 text-amber-200">
                   <span className="text-[10px]">📢</span>
                   <p className="text-[9px] font-semibold truncate flex-1">{announcement || "Welcome to the room! Follow rules."}</p>
@@ -347,7 +347,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
                     <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-[75px] w-[75px] object-contain animate-bounce drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
                   </div>
                 </button>
-                <div style={{ height: "105px" }} className="relative w-full shrink-0 overflow-hidden rounded-xl border border-white/20 bg-black/50 backdrop-blur-md flex items-center justify-center shadow-lg">
+                <div style={{ height: "105px" }} className="relative w-full shrink-0 overflow-hidden rounded-xl border border-white/20 bg-black/50  flex items-center justify-center shadow-lg">
                   {currentSlide && <img src={currentSlide.image_url} alt={currentSlide.title} className="h-full w-full object-cover rounded-xl" />}
                 </div>
               </div>
@@ -356,93 +356,12 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         </div>
       </div>
 
-      <nav data-jalwa-live-component="voice.bottom-nav" data-voice-room-toolbar="true" style={{ backgroundColor: "rgba(10, 10, 15, 0.95)" }} className="relative z-20 box-border flex h-[calc(52px+env(safe-area-inset-bottom))] shrink-0 items-center justify-around border-t border-white/15 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+      <nav data-jalwa-live-component="voice.bottom-nav" data-voice-room-toolbar="true" style={{ backgroundColor: "rgba(10, 10, 15, 0.95)" }} className="relative z-20 box-border flex h-[calc(52px+env(safe-area-inset-bottom))] shrink-0 items-center justify-around border-t border-white/15 px-1 pb-[env(safe-area-inset-bottom)] ">
         <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>{micOn ? <Mic className="h-4 w-4 text-emerald-400" /> : <MicOff className="h-4 w-4 text-rose-400" />}</button>
         <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}><Smile className="h-3.5 w-3.5" style={{ color: primaryThemeColor }} /></button>
         <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Games" aria-expanded={gamesOpen}><Gamepad2 className="h-3.5 w-3.5" style={{ color: accentThemeColor }} /></button>
         <button type="button" onClick={tap(() => setPrivateChatOpen(true))} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-cyan-400/50 bg-cyan-500/20 text-cyan-300 shadow-md")} aria-label="Private Chat"><MessageCircle className="h-4 w-4" /></button>
         <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-10 w-10 place-items-center rounded-2xl p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-white/40 disabled:opacity-40")} style={{ background: `linear-gradient(135deg, ${primaryThemeColor}, ${accentThemeColor})` }} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}>
           <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="grid h-full w-full place-items-center rounded-[12px] bg-black/60 backdrop-blur-sm text-amber-200"><Gift className="h-4.5 w-4.5 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ color: primaryThemeColor }} /></div>
+          <div className="grid h-full w-full place-items-center rounded-[12px] bg-black/60  text-amber-200"><Gift className="h-4.5 w-4.5 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ color: primaryThemeColor }} /></div>
         </button>
-        <button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label={isHost ? "Host Room Settings" : isModerator ? "Moderator Controls" : "More"}>{isHost ? <Shield className="h-3.5 w-3.5" style={{ color: primaryThemeColor }} /> : isModerator ? <Shield className="h-3.5 w-3.5 text-cyan-400" /> : <Grid2X2 className="h-3.5 w-3.5 text-white" />}</button>
-      </nav>
-
-      <JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />
-      
-      {showMiniInputPopup && (
-        <div className="absolute inset-0 z-[2147483500] flex items-end justify-center bg-black/30 backdrop-blur-md animate-fade-in p-0" onClick={() => setShowMiniInputPopup(false)}>
-          <div className="w-full max-w-[480px] bg-[#120a1f]/90 border-t p-2.5 rounded-t-2xl shadow-2xl flex items-center gap-2 animate-slide-up backdrop-blur-xl" style={{ borderColor: `${primaryThemeColor}66` }} onClick={e => e.stopPropagation()}>
-            <input value={miniDraft} onChange={e => setMiniDraft(e.target.value.slice(0, 500))} onKeyDown={async e => { if (e.key === "Enter") { e.preventDefault(); if (!miniDraft.trim()) return; setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(miniDraft); } }} placeholder="Type a comment..." autoFocus autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="send" inputMode="text" className="flex-1 bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-xs font-medium text-white placeholder:text-white/65 outline-none" style={{ borderColor: primaryThemeColor }} />
-            <button type="button" onClick={async () => { if (!miniDraft.trim()) return; setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(miniDraft); }} className="px-4 py-2 rounded-xl text-white font-extrabold text-xs shadow-lg active:scale-95 transition" style={{ background: `linear-gradient(90deg, ${primaryThemeColor}, ${accentThemeColor})` }}>Send</button>
-          </div>
-        </div>
-      )}
-
-      {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
-      
-      <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(emoji, targetSeatIndex) => onSendEmoji?.(emoji, targetSeatIndex)} />
-
-      {userMoreOpen && (
-        <div className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/30 p-0 backdrop-blur-md animate-fade-in" onClick={() => setUserMoreOpen(false)}>
-          <div className="w-full max-w-sm rounded-t-3xl border-t border-x border-white/20 bg-[#100719]/90 p-4 text-white shadow-2xl backdrop-blur-xl flex flex-col animate-slide-up" style={{ borderColor: `${accentThemeColor}55` }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2"><Info className="h-4 w-4" style={{ color: accentThemeColor }} /><h3 className="text-xs font-black uppercase tracking-wider" style={{ color: accentThemeColor }}>Room Options</h3></div>
-            </div>
-            <div className="py-4 space-y-2 text-xs">
-              <button type="button" onClick={() => onToggleSpeaker()} className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 active:scale-95 transition">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${speakerMuted ? "bg-rose-500/20 text-rose-300" : "bg-cyan-500/20 text-cyan-300"}`}>{speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</div>
-                  <div className="text-left"><p className="font-bold text-white">Speaker Output</p><p className="text-[10px] text-white/50">{speakerMuted ? "Awaaz band hai (Muted)" : "Awaaz chalu hai"}</p></div>
-                </div>
-                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${speakerMuted ? "bg-rose-500/30 text-rose-300" : "bg-cyan-500/30 text-cyan-300"}`}>{speakerMuted ? "Unmute" : "Mute"}</span>
-              </button>
-              <button type="button" onClick={() => { setUserMoreOpen(false); onShare(); }} className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 active:scale-95 transition">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-purple-500/20 text-purple-300"><Share2 className="h-4 w-4" /></div>
-                  <div className="text-left"><p className="font-bold text-white">Share Room</p><p className="text-[10px] text-white/50">Doston ke sath room link share karein</p></div>
-                </div>
-                <span className="text-[10px] font-semibold text-purple-300 bg-purple-500/20 px-2.5 py-1 rounded-lg">Share</span>
-              </button>
-              <button type="button" onClick={() => { setUserMoreOpen(false); onReport(); }} className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 active:scale-95 transition">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-amber-500/20 text-amber-300"><Flag className="h-4 w-4" /></div>
-                  <div className="text-left"><p className="font-bold text-white">Report Room</p><p className="text-[10px] text-white/50">Agar koi kharabi ya violation hai</p></div>
-                </div>
-                <span className="text-[10px] font-semibold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-lg">Report</span>
-              </button>
-            </div>
-            <button type="button" onClick={() => { setUserMoreOpen(false); onExit(); }} className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 text-white font-bold text-xs shadow-lg active:scale-95 transition flex items-center justify-center gap-2"><LogOut className="h-4 w-4" /><span>Leave Room</span></button>
-          </div>
-        </div>
-      )}
-
-      {gamesOpen && <RoomGamesSheet open={gamesOpen} onClose={() => setGamesOpen(false)} onOpenNative={slug => { setGamesOpen(false); onOpenNativeGame?.(slug); }} />}
-      {popularityOpen && <HostPopularitySheet roomId={roomId} open={popularityOpen} onClose={() => setPopularityOpen(false)} popularityPct={popularityPct} hostName={room.host?.username} />}
-      {selectedMember && (
-        <VoiceRoomMemberSheet
-          roomId={roomId}
-          member={selectedMember}
-          canModerate={isHost && selectedMember.id !== room.host?.id}
-          isHost={isHost}
-          onClose={() => setSelectedMember(null)}
-          onOpenPublicChat={(member: VoiceRoomMemberProfile) => {
-            setSelectedMember(null);
-            setMiniDraft(`@${member.username ?? "user"} `);
-            setShowMiniInputPopup(true);
-          }}
-          onOpenGift={(member: VoiceRoomMemberProfile) => {
-            setSelectedMember(null);
-            openGifts();
-          }}
-          onOpenHostControls={isHost && selectedMember.id === room.host?.id ? () => {
-            setSelectedMember(null);
-            setHostSettingsOpen(true);
-          } : undefined}
-        />
-      )}
-      {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} speakerMuted={speakerMuted} onToggleSpeaker={onToggleSpeaker} />}
-      {isModerator && <ModeratorControls roomId={roomId} open={moderatorControlsOpen} onClose={() => setModeratorControlsOpen(false)} micOn={micOn} speakerMuted={speakerMuted} onToggleMic={onToggleMic} onToggleSpeaker={onToggleSpeaker} onOpenMusic={onOpenMusic} />}
-    </main>
-  );
-};
