@@ -59,6 +59,9 @@ function useCounts(userId: string | undefined) {
   return useQuery({
     queryKey: ["me-counts", userId],
     enabled: !!userId,
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const [followers, following, visitors, liveRooms] = await Promise.all([
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", userId!),
@@ -83,6 +86,9 @@ function MePage() {
   const { data: partnerRow } = useQuery({
     queryKey: ["is-partner", user?.id],
     enabled: !!user?.id,
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data } = await supabase
         .from("partners")
@@ -122,6 +128,9 @@ function MePage() {
   const { data: adminVipTier } = useQuery({
     queryKey: ["me-admin-vip-tier", user?.id, isVipActive],
     enabled: !!user?.id && isVipActive,
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data: tx } = await supabase
         .from("wallet_transactions")
