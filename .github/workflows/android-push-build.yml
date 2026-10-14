@@ -59,6 +59,8 @@ jobs:
           grep -q 'app.lovable.jalwa' android/app/google-services.json
           grep -q 'jalwa_default' android/app/src/main/AndroidManifest.xml
           grep -q 'POST_NOTIFICATIONS' android/app/src/main/AndroidManifest.xml
+          grep -q 'ACCESS_COARSE_LOCATION' android/app/src/main/AndroidManifest.xml
+          grep -q 'ACCESS_FINE_LOCATION' android/app/src/main/AndroidManifest.xml
           grep -q 'RECORD_AUDIO' android/app/src/main/AndroidManifest.xml
 
       - name: Build debug APK
