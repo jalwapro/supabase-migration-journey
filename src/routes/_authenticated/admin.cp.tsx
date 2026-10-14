@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import CpLevelManager from "@/components/CP/CpLevelManager";
+import { CpAdminHub } from "@/components/CP/admin/CpAdminHub";
 
 export const Route = createFileRoute("/_authenticated/admin/cp")({
   component: CpAdminPage,
 });
 
 function CpAdminPage() {
-  return <CpLevelManager />;
+  return <CpAdminHub />;
 }

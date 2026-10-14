@@ -34,9 +34,9 @@ import { Route as TestLivekitRouteImport } from './routes/test-livekit'
 import { Route as VoiceRoomRedesignRouteImport } from './routes/voice-room-redesign'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
-import { Route as AuthenticatedCpRouteImport } from './routes/_authenticated/cp'
+import { Route as AuthenticatedCoinAgentsRouteImport } from './routes/_authenticated/coin-agents'
 import { Route as AuthenticatedCoinSellersRouteImport } from './routes/_authenticated/coin-sellers'
-import { Route as AuthenticatedP2pAgentRouteImport } from './routes/_authenticated/p2p.agent'
+import { Route as AuthenticatedCpRouteImport } from './routes/_authenticated/cp'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
 import { Route as AuthenticatedCustomThemeRouteImport } from './routes/_authenticated/custom-theme'
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
@@ -46,6 +46,7 @@ import { Route as AuthenticatedGiftsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedMyRoomsRouteImport } from './routes/_authenticated/my-rooms'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedP2pRouteImport } from './routes/_authenticated/p2p'
 import { Route as AuthenticatedPartnerRouteImport } from './routes/_authenticated/partner'
 import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
 import { Route as AuthenticatedRechargeHistoryRouteImport } from './routes/_authenticated/recharge-history'
@@ -88,9 +89,11 @@ import { Route as AuthenticatedAdminAppStudioTokensRouteImport } from './routes/
 import { Route as AuthenticatedAdminAssignFrameRouteImport } from './routes/_authenticated/admin.assign-frame'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin.banners'
 import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticated/admin.cms'
+import { Route as AuthenticatedAdminCoinAgentRouteImport } from './routes/_authenticated/admin.coin-agent'
 import { Route as AuthenticatedAdminCoinSellersRouteImport } from './routes/_authenticated/admin.coin-sellers'
 import { Route as AuthenticatedAdminCoinsRouteImport } from './routes/_authenticated/admin.coins'
 import { Route as AuthenticatedAdminConnectionRouteImport } from './routes/_authenticated/admin.connection'
+import { Route as AuthenticatedAdminCpRouteImport } from './routes/_authenticated/admin.cp'
 import { Route as AuthenticatedAdminCustomThemesRouteImport } from './routes/_authenticated/admin.custom-themes'
 import { Route as AuthenticatedAdminEmojisRouteImport } from './routes/_authenticated/admin.emojis'
 import { Route as AuthenticatedAdminEntranceStudioRouteImport } from './routes/_authenticated/admin.entrance-studio'
@@ -108,10 +111,10 @@ import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminLudoReplaysRouteImport } from './routes/_authenticated/admin.ludo-replays'
 import { Route as AuthenticatedAdminMinigamesRouteImport } from './routes/_authenticated/admin.minigames'
 import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin.notifications'
+import { Route as AuthenticatedAdminP2pRouteImport } from './routes/_authenticated/admin.p2p'
 import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authenticated/admin.partners'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
 import { Route as AuthenticatedAdminPkRouteImport } from './routes/_authenticated/admin.pk'
-import { Route as AuthenticatedAdminCpRouteImport } from './routes/_authenticated/admin.cp'
 import { Route as AuthenticatedAdminProfileAdminRouteImport } from './routes/_authenticated/admin.profile-admin'
 import { Route as AuthenticatedAdminProfileCardsRouteImport } from './routes/_authenticated/admin.profile-cards'
 import { Route as AuthenticatedAdminPushRouteImport } from './routes/_authenticated/admin.push'
@@ -145,6 +148,7 @@ import { Route as AuthenticatedGamesDailySpinRouteImport } from './routes/_authe
 import { Route as AuthenticatedGamesLeaderboardRouteImport } from './routes/_authenticated/games.leaderboard'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 import { Route as AuthenticatedGamesLudoReplaysRouteImport } from './routes/_authenticated/games.ludo-replays'
+import { Route as AuthenticatedP2pAgentRouteImport } from './routes/_authenticated/p2p/agent'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings_.notifications'
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as ApiAdminPushTestRouteImport } from './routes/api/admin/push-test'
@@ -154,6 +158,7 @@ import { Route as ApiPublicFirebaseConfigRouteImport } from './routes/api/public
 import { Route as ApiPublicPushWebhookRouteImport } from './routes/api/public/push-webhook'
 import { Route as ApiPublicSmtpVerifyRouteImport } from './routes/api/public/smtp-verify'
 import { Route as AuthenticatedGamesPlaySlugRouteImport } from './routes/_authenticated/games.play.$slug'
+import { Route as AuthenticatedP2pOrderOrderIdRouteImport } from './routes/_authenticated/p2p/order.$orderId'
 import { Route as ApiAdminR2GiftsDeleteRouteImport } from './routes/api/admin/r2-gifts/delete'
 
 const IndexRoute = IndexRouteImport.update({
@@ -280,9 +285,9 @@ const AuthenticatedBlockedRoute = AuthenticatedBlockedRouteImport.update({
   path: '/blocked',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCpRoute = AuthenticatedCpRouteImport.update({
-  id: '/cp',
-  path: '/cp',
+const AuthenticatedCoinAgentsRoute = AuthenticatedCoinAgentsRouteImport.update({
+  id: '/coin-agents',
+  path: '/coin-agents',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCoinSellersRoute =
@@ -291,9 +296,9 @@ const AuthenticatedCoinSellersRoute =
     path: '/coin-sellers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedP2pAgentRoute = AuthenticatedP2pAgentRouteImport.update({
-  id: '/p2p/agent',
-  path: '/p2p/agent',
+const AuthenticatedCpRoute = AuthenticatedCpRouteImport.update({
+  id: '/cp',
+  path: '/cp',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCreateRoomRoute = AuthenticatedCreateRoomRouteImport.update({
@@ -343,6 +348,11 @@ const AuthenticatedNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedP2pRoute = AuthenticatedP2pRouteImport.update({
+  id: '/p2p',
+  path: '/p2p',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPartnerRoute = AuthenticatedPartnerRouteImport.update({
   id: '/partner',
   path: '/partner',
@@ -562,6 +572,12 @@ const AuthenticatedAdminCmsRoute = AuthenticatedAdminCmsRouteImport.update({
   path: '/cms',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminCoinAgentRoute =
+  AuthenticatedAdminCoinAgentRouteImport.update({
+    id: '/coin-agent',
+    path: '/coin-agent',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCoinSellersRoute =
   AuthenticatedAdminCoinSellersRouteImport.update({
     id: '/coin-sellers',
@@ -579,6 +595,11 @@ const AuthenticatedAdminConnectionRoute =
     path: '/connection',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCpRoute = AuthenticatedAdminCpRouteImport.update({
+  id: '/cp',
+  path: '/cp',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminCustomThemesRoute =
   AuthenticatedAdminCustomThemesRouteImport.update({
     id: '/custom-themes',
@@ -678,6 +699,11 @@ const AuthenticatedAdminNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminP2pRoute = AuthenticatedAdminP2pRouteImport.update({
+  id: '/p2p',
+  path: '/p2p',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminPartnersRoute =
   AuthenticatedAdminPartnersRouteImport.update({
     id: '/partners',
@@ -690,11 +716,6 @@ const AuthenticatedAdminPaymentAccountsRoute =
     path: '/payment-accounts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminCpRoute = AuthenticatedAdminCpRouteImport.update({
-  id: '/cp',
-  path: '/cp',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
 const AuthenticatedAdminPkRoute = AuthenticatedAdminPkRouteImport.update({
   id: '/pk',
   path: '/pk',
@@ -892,6 +913,11 @@ const AuthenticatedGamesLudoReplaysRoute =
     path: '/ludo-replays',
     getParentRoute: () => AuthenticatedGamesRoute,
   } as any)
+const AuthenticatedP2pAgentRoute = AuthenticatedP2pAgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => AuthenticatedP2pRoute,
+} as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/settings_/notifications',
@@ -939,6 +965,12 @@ const AuthenticatedGamesPlaySlugRoute =
     path: '/play/$slug',
     getParentRoute: () => AuthenticatedGamesRoute,
   } as any)
+const AuthenticatedP2pOrderOrderIdRoute =
+  AuthenticatedP2pOrderOrderIdRouteImport.update({
+    id: '/order/$orderId',
+    path: '/order/$orderId',
+    getParentRoute: () => AuthenticatedP2pRoute,
+  } as any)
 const ApiAdminR2GiftsDeleteRoute = ApiAdminR2GiftsDeleteRouteImport.update({
   id: '/delete',
   path: '/delete',
@@ -970,9 +1002,9 @@ export interface FileRoutesByFullPath {
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blocked': typeof AuthenticatedBlockedRoute
-  '/cp': typeof AuthenticatedCpRoute
+  '/coin-agents': typeof AuthenticatedCoinAgentsRoute
   '/coin-sellers': typeof AuthenticatedCoinSellersRoute
-  '/p2p/agent': typeof AuthenticatedP2pAgentRoute
+  '/cp': typeof AuthenticatedCpRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
@@ -982,6 +1014,7 @@ export interface FileRoutesByFullPath {
   '/me': typeof AuthenticatedMeRoute
   '/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/p2p': typeof AuthenticatedP2pRouteWithChildren
   '/partner': typeof AuthenticatedPartnerRoute
   '/recharge': typeof AuthenticatedRechargeRoute
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
@@ -1023,9 +1056,11 @@ export interface FileRoutesByFullPath {
   '/admin/assign-frame': typeof AuthenticatedAdminAssignFrameRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
+  '/admin/coin-agent': typeof AuthenticatedAdminCoinAgentRoute
   '/admin/coin-sellers': typeof AuthenticatedAdminCoinSellersRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/admin/connection': typeof AuthenticatedAdminConnectionRoute
+  '/admin/cp': typeof AuthenticatedAdminCpRoute
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/emojis': typeof AuthenticatedAdminEmojisRoute
   '/admin/entrance-studio': typeof AuthenticatedAdminEntranceStudioRoute
@@ -1043,9 +1078,9 @@ export interface FileRoutesByFullPath {
   '/admin/ludo-replays': typeof AuthenticatedAdminLudoReplaysRoute
   '/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
+  '/admin/p2p': typeof AuthenticatedAdminP2pRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
-  '/admin/cp': typeof AuthenticatedAdminCpRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
   '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
   '/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
@@ -1079,6 +1114,7 @@ export interface FileRoutesByFullPath {
   '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/games/ludo-replays': typeof AuthenticatedGamesLudoReplaysRoute
+  '/p2p/agent': typeof AuthenticatedP2pAgentRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/admin/push-test': typeof ApiAdminPushTestRoute
@@ -1090,6 +1126,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/games/': typeof AuthenticatedGamesIndexRoute
   '/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
+  '/p2p/order/$orderId': typeof AuthenticatedP2pOrderOrderIdRoute
   '/api/admin/r2-gifts/delete': typeof ApiAdminR2GiftsDeleteRoute
 }
 export interface FileRoutesByTo {
@@ -1116,8 +1153,9 @@ export interface FileRoutesByTo {
   '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/blocked': typeof AuthenticatedBlockedRoute
+  '/coin-agents': typeof AuthenticatedCoinAgentsRoute
   '/coin-sellers': typeof AuthenticatedCoinSellersRoute
-  '/p2p/agent': typeof AuthenticatedP2pAgentRoute
+  '/cp': typeof AuthenticatedCpRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
@@ -1126,6 +1164,7 @@ export interface FileRoutesByTo {
   '/me': typeof AuthenticatedMeRoute
   '/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/p2p': typeof AuthenticatedP2pRouteWithChildren
   '/partner': typeof AuthenticatedPartnerRoute
   '/recharge': typeof AuthenticatedRechargeRoute
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
@@ -1167,9 +1206,11 @@ export interface FileRoutesByTo {
   '/admin/assign-frame': typeof AuthenticatedAdminAssignFrameRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
+  '/admin/coin-agent': typeof AuthenticatedAdminCoinAgentRoute
   '/admin/coin-sellers': typeof AuthenticatedAdminCoinSellersRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/admin/connection': typeof AuthenticatedAdminConnectionRoute
+  '/admin/cp': typeof AuthenticatedAdminCpRoute
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/emojis': typeof AuthenticatedAdminEmojisRoute
   '/admin/entrance-studio': typeof AuthenticatedAdminEntranceStudioRoute
@@ -1187,6 +1228,7 @@ export interface FileRoutesByTo {
   '/admin/ludo-replays': typeof AuthenticatedAdminLudoReplaysRoute
   '/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
+  '/admin/p2p': typeof AuthenticatedAdminP2pRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
@@ -1222,6 +1264,7 @@ export interface FileRoutesByTo {
   '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/games/ludo-replays': typeof AuthenticatedGamesLudoReplaysRoute
+  '/p2p/agent': typeof AuthenticatedP2pAgentRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/admin/push-test': typeof ApiAdminPushTestRoute
@@ -1233,6 +1276,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/games': typeof AuthenticatedGamesIndexRoute
   '/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
+  '/p2p/order/$orderId': typeof AuthenticatedP2pOrderOrderIdRoute
   '/api/admin/r2-gifts/delete': typeof ApiAdminR2GiftsDeleteRoute
 }
 export interface FileRoutesById {
@@ -1262,9 +1306,9 @@ export interface FileRoutesById {
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/blocked': typeof AuthenticatedBlockedRoute
-  '/_authenticated/cp': typeof AuthenticatedCpRoute
+  '/_authenticated/coin-agents': typeof AuthenticatedCoinAgentsRoute
   '/_authenticated/coin-sellers': typeof AuthenticatedCoinSellersRoute
-  '/_authenticated/p2p/agent': typeof AuthenticatedP2pAgentRoute
+  '/_authenticated/cp': typeof AuthenticatedCpRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
   '/_authenticated/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/_authenticated/friends': typeof AuthenticatedFriendsRoute
@@ -1274,6 +1318,7 @@ export interface FileRoutesById {
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/p2p': typeof AuthenticatedP2pRouteWithChildren
   '/_authenticated/partner': typeof AuthenticatedPartnerRoute
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
   '/_authenticated/recharge-history': typeof AuthenticatedRechargeHistoryRoute
@@ -1315,9 +1360,11 @@ export interface FileRoutesById {
   '/_authenticated/admin/assign-frame': typeof AuthenticatedAdminAssignFrameRoute
   '/_authenticated/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/_authenticated/admin/cms': typeof AuthenticatedAdminCmsRoute
+  '/_authenticated/admin/coin-agent': typeof AuthenticatedAdminCoinAgentRoute
   '/_authenticated/admin/coin-sellers': typeof AuthenticatedAdminCoinSellersRoute
   '/_authenticated/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/_authenticated/admin/connection': typeof AuthenticatedAdminConnectionRoute
+  '/_authenticated/admin/cp': typeof AuthenticatedAdminCpRoute
   '/_authenticated/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/_authenticated/admin/emojis': typeof AuthenticatedAdminEmojisRoute
   '/_authenticated/admin/entrance-studio': typeof AuthenticatedAdminEntranceStudioRoute
@@ -1335,9 +1382,9 @@ export interface FileRoutesById {
   '/_authenticated/admin/ludo-replays': typeof AuthenticatedAdminLudoReplaysRoute
   '/_authenticated/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
+  '/_authenticated/admin/p2p': typeof AuthenticatedAdminP2pRoute
   '/_authenticated/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
-  '/_authenticated/admin/cp': typeof AuthenticatedAdminCpRoute
   '/_authenticated/admin/pk': typeof AuthenticatedAdminPkRoute
   '/_authenticated/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
   '/_authenticated/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
@@ -1371,6 +1418,7 @@ export interface FileRoutesById {
   '/_authenticated/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/_authenticated/games/ludo-replays': typeof AuthenticatedGamesLudoReplaysRoute
+  '/_authenticated/p2p/agent': typeof AuthenticatedP2pAgentRoute
   '/_authenticated/settings_/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/admin/push-test': typeof ApiAdminPushTestRoute
@@ -1382,6 +1430,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/games/': typeof AuthenticatedGamesIndexRoute
   '/_authenticated/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
+  '/_authenticated/p2p/order/$orderId': typeof AuthenticatedP2pOrderOrderIdRoute
   '/api/admin/r2-gifts/delete': typeof ApiAdminR2GiftsDeleteRoute
 }
 export interface FileRouteTypes {
@@ -1411,8 +1460,9 @@ export interface FileRouteTypes {
     | '/voice-room-redesign'
     | '/admin'
     | '/blocked'
+    | '/coin-agents'
     | '/coin-sellers'
-    | '/p2p/agent'
+    | '/cp'
     | '/create-room'
     | '/custom-theme'
     | '/friends'
@@ -1422,6 +1472,7 @@ export interface FileRouteTypes {
     | '/me'
     | '/my-rooms'
     | '/notifications'
+    | '/p2p'
     | '/partner'
     | '/recharge'
     | '/recharge-history'
@@ -1463,9 +1514,11 @@ export interface FileRouteTypes {
     | '/admin/assign-frame'
     | '/admin/banners'
     | '/admin/cms'
+    | '/admin/coin-agent'
     | '/admin/coin-sellers'
     | '/admin/coins'
     | '/admin/connection'
+    | '/admin/cp'
     | '/admin/custom-themes'
     | '/admin/emojis'
     | '/admin/entrance-studio'
@@ -1483,6 +1536,7 @@ export interface FileRouteTypes {
     | '/admin/ludo-replays'
     | '/admin/minigames'
     | '/admin/notifications'
+    | '/admin/p2p'
     | '/admin/partners'
     | '/admin/payment-accounts'
     | '/admin/pk'
@@ -1518,6 +1572,7 @@ export interface FileRouteTypes {
     | '/games/leaderboard'
     | '/games/lucky-spin'
     | '/games/ludo-replays'
+    | '/p2p/agent'
     | '/settings/notifications'
     | '/u/$userId'
     | '/api/admin/push-test'
@@ -1529,6 +1584,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/games/'
     | '/games/play/$slug'
+    | '/p2p/order/$orderId'
     | '/api/admin/r2-gifts/delete'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1555,8 +1611,9 @@ export interface FileRouteTypes {
     | '/test-livekit'
     | '/voice-room-redesign'
     | '/blocked'
+    | '/coin-agents'
     | '/coin-sellers'
-    | '/p2p/agent'
+    | '/cp'
     | '/create-room'
     | '/custom-theme'
     | '/friends'
@@ -1565,6 +1622,7 @@ export interface FileRouteTypes {
     | '/me'
     | '/my-rooms'
     | '/notifications'
+    | '/p2p'
     | '/partner'
     | '/recharge'
     | '/recharge-history'
@@ -1606,9 +1664,11 @@ export interface FileRouteTypes {
     | '/admin/assign-frame'
     | '/admin/banners'
     | '/admin/cms'
+    | '/admin/coin-agent'
     | '/admin/coin-sellers'
     | '/admin/coins'
     | '/admin/connection'
+    | '/admin/cp'
     | '/admin/custom-themes'
     | '/admin/emojis'
     | '/admin/entrance-studio'
@@ -1626,6 +1686,7 @@ export interface FileRouteTypes {
     | '/admin/ludo-replays'
     | '/admin/minigames'
     | '/admin/notifications'
+    | '/admin/p2p'
     | '/admin/partners'
     | '/admin/payment-accounts'
     | '/admin/pk'
@@ -1661,6 +1722,7 @@ export interface FileRouteTypes {
     | '/games/leaderboard'
     | '/games/lucky-spin'
     | '/games/ludo-replays'
+    | '/p2p/agent'
     | '/settings/notifications'
     | '/u/$userId'
     | '/api/admin/push-test'
@@ -1672,6 +1734,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/games'
     | '/games/play/$slug'
+    | '/p2p/order/$orderId'
     | '/api/admin/r2-gifts/delete'
   id:
     | '__root__'
@@ -1700,8 +1763,9 @@ export interface FileRouteTypes {
     | '/voice-room-redesign'
     | '/_authenticated/admin'
     | '/_authenticated/blocked'
+    | '/_authenticated/coin-agents'
     | '/_authenticated/coin-sellers'
-    | '/_authenticated/p2p/agent'
+    | '/_authenticated/cp'
     | '/_authenticated/create-room'
     | '/_authenticated/custom-theme'
     | '/_authenticated/friends'
@@ -1711,6 +1775,7 @@ export interface FileRouteTypes {
     | '/_authenticated/me'
     | '/_authenticated/my-rooms'
     | '/_authenticated/notifications'
+    | '/_authenticated/p2p'
     | '/_authenticated/partner'
     | '/_authenticated/recharge'
     | '/_authenticated/recharge-history'
@@ -1752,9 +1817,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/assign-frame'
     | '/_authenticated/admin/banners'
     | '/_authenticated/admin/cms'
+    | '/_authenticated/admin/coin-agent'
     | '/_authenticated/admin/coin-sellers'
     | '/_authenticated/admin/coins'
     | '/_authenticated/admin/connection'
+    | '/_authenticated/admin/cp'
     | '/_authenticated/admin/custom-themes'
     | '/_authenticated/admin/emojis'
     | '/_authenticated/admin/entrance-studio'
@@ -1772,6 +1839,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/ludo-replays'
     | '/_authenticated/admin/minigames'
     | '/_authenticated/admin/notifications'
+    | '/_authenticated/admin/p2p'
     | '/_authenticated/admin/partners'
     | '/_authenticated/admin/payment-accounts'
     | '/_authenticated/admin/pk'
@@ -1807,6 +1875,7 @@ export interface FileRouteTypes {
     | '/_authenticated/games/leaderboard'
     | '/_authenticated/games/lucky-spin'
     | '/_authenticated/games/ludo-replays'
+    | '/_authenticated/p2p/agent'
     | '/_authenticated/settings_/notifications'
     | '/_authenticated/u/$userId'
     | '/api/admin/push-test'
@@ -1818,6 +1887,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/games/'
     | '/_authenticated/games/play/$slug'
+    | '/_authenticated/p2p/order/$orderId'
     | '/api/admin/r2-gifts/delete'
   fileRoutesById: FileRoutesById
 }
@@ -2047,6 +2117,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBlockedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/coin-agents': {
+      id: '/_authenticated/coin-agents'
+      path: '/coin-agents'
+      fullPath: '/coin-agents'
+      preLoaderRoute: typeof AuthenticatedCoinAgentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/coin-sellers': {
       id: '/_authenticated/coin-sellers'
       path: '/coin-sellers'
@@ -2054,11 +2131,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoinSellersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/p2p/agent': {
-      id: '/_authenticated/p2p/agent'
-      path: '/p2p/agent'
-      fullPath: '/p2p/agent'
-      preLoaderRoute: typeof AuthenticatedP2pAgentRouteImport
+    '/_authenticated/cp': {
+      id: '/_authenticated/cp'
+      path: '/cp'
+      fullPath: '/cp'
+      preLoaderRoute: typeof AuthenticatedCpRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/create-room': {
@@ -2122,6 +2199,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/p2p': {
+      id: '/_authenticated/p2p'
+      path: '/p2p'
+      fullPath: '/p2p'
+      preLoaderRoute: typeof AuthenticatedP2pRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/partner': {
@@ -2418,6 +2502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCmsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/coin-agent': {
+      id: '/_authenticated/admin/coin-agent'
+      path: '/coin-agent'
+      fullPath: '/admin/coin-agent'
+      preLoaderRoute: typeof AuthenticatedAdminCoinAgentRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/coin-sellers': {
       id: '/_authenticated/admin/coin-sellers'
       path: '/coin-sellers'
@@ -2437,6 +2528,13 @@ declare module '@tanstack/react-router' {
       path: '/connection'
       fullPath: '/admin/connection'
       preLoaderRoute: typeof AuthenticatedAdminConnectionRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/cp': {
+      id: '/_authenticated/admin/cp'
+      path: '/cp'
+      fullPath: '/admin/cp'
+      preLoaderRoute: typeof AuthenticatedAdminCpRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/custom-themes': {
@@ -2556,6 +2654,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/admin/notifications'
       preLoaderRoute: typeof AuthenticatedAdminNotificationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/p2p': {
+      id: '/_authenticated/admin/p2p'
+      path: '/p2p'
+      fullPath: '/admin/p2p'
+      preLoaderRoute: typeof AuthenticatedAdminP2pRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/partners': {
@@ -2810,6 +2915,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGamesLudoReplaysRouteImport
       parentRoute: typeof AuthenticatedGamesRoute
     }
+    '/_authenticated/p2p/agent': {
+      id: '/_authenticated/p2p/agent'
+      path: '/agent'
+      fullPath: '/p2p/agent'
+      preLoaderRoute: typeof AuthenticatedP2pAgentRouteImport
+      parentRoute: typeof AuthenticatedP2pRoute
+    }
     '/_authenticated/settings_/notifications': {
       id: '/_authenticated/settings_/notifications'
       path: '/settings/notifications'
@@ -2873,6 +2985,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGamesPlaySlugRouteImport
       parentRoute: typeof AuthenticatedGamesRoute
     }
+    '/_authenticated/p2p/order/$orderId': {
+      id: '/_authenticated/p2p/order/$orderId'
+      path: '/order/$orderId'
+      fullPath: '/p2p/order/$orderId'
+      preLoaderRoute: typeof AuthenticatedP2pOrderOrderIdRouteImport
+      parentRoute: typeof AuthenticatedP2pRoute
+    }
     '/api/admin/r2-gifts/delete': {
       id: '/api/admin/r2-gifts/delete'
       path: '/delete'
@@ -2893,9 +3012,11 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAssignFrameRoute: typeof AuthenticatedAdminAssignFrameRoute
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
   AuthenticatedAdminCmsRoute: typeof AuthenticatedAdminCmsRoute
+  AuthenticatedAdminCoinAgentRoute: typeof AuthenticatedAdminCoinAgentRoute
   AuthenticatedAdminCoinSellersRoute: typeof AuthenticatedAdminCoinSellersRoute
   AuthenticatedAdminCoinsRoute: typeof AuthenticatedAdminCoinsRoute
   AuthenticatedAdminConnectionRoute: typeof AuthenticatedAdminConnectionRoute
+  AuthenticatedAdminCpRoute: typeof AuthenticatedAdminCpRoute
   AuthenticatedAdminCustomThemesRoute: typeof AuthenticatedAdminCustomThemesRoute
   AuthenticatedAdminEmojisRoute: typeof AuthenticatedAdminEmojisRoute
   AuthenticatedAdminEntranceStudioRoute: typeof AuthenticatedAdminEntranceStudioRoute
@@ -2913,6 +3034,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminLudoReplaysRoute: typeof AuthenticatedAdminLudoReplaysRoute
   AuthenticatedAdminMinigamesRoute: typeof AuthenticatedAdminMinigamesRoute
   AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
+  AuthenticatedAdminP2pRoute: typeof AuthenticatedAdminP2pRoute
   AuthenticatedAdminPartnersRoute: typeof AuthenticatedAdminPartnersRoute
   AuthenticatedAdminPaymentAccountsRoute: typeof AuthenticatedAdminPaymentAccountsRoute
   AuthenticatedAdminPkRoute: typeof AuthenticatedAdminPkRoute
@@ -2961,9 +3083,11 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAssignFrameRoute: AuthenticatedAdminAssignFrameRoute,
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
   AuthenticatedAdminCmsRoute: AuthenticatedAdminCmsRoute,
+  AuthenticatedAdminCoinAgentRoute: AuthenticatedAdminCoinAgentRoute,
   AuthenticatedAdminCoinSellersRoute: AuthenticatedAdminCoinSellersRoute,
   AuthenticatedAdminCoinsRoute: AuthenticatedAdminCoinsRoute,
   AuthenticatedAdminConnectionRoute: AuthenticatedAdminConnectionRoute,
+  AuthenticatedAdminCpRoute: AuthenticatedAdminCpRoute,
   AuthenticatedAdminCustomThemesRoute: AuthenticatedAdminCustomThemesRoute,
   AuthenticatedAdminEmojisRoute: AuthenticatedAdminEmojisRoute,
   AuthenticatedAdminEntranceStudioRoute: AuthenticatedAdminEntranceStudioRoute,
@@ -2981,10 +3105,10 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminLudoReplaysRoute: AuthenticatedAdminLudoReplaysRoute,
   AuthenticatedAdminMinigamesRoute: AuthenticatedAdminMinigamesRoute,
   AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
+  AuthenticatedAdminP2pRoute: AuthenticatedAdminP2pRoute,
   AuthenticatedAdminPartnersRoute: AuthenticatedAdminPartnersRoute,
   AuthenticatedAdminPaymentAccountsRoute:
     AuthenticatedAdminPaymentAccountsRoute,
-  AuthenticatedAdminCpRoute: AuthenticatedAdminCpRoute,
   AuthenticatedAdminPkRoute: AuthenticatedAdminPkRoute,
   AuthenticatedAdminProfileAdminRoute: AuthenticatedAdminProfileAdminRoute,
   AuthenticatedAdminProfileCardsRoute: AuthenticatedAdminProfileCardsRoute,
@@ -3044,11 +3168,25 @@ const AuthenticatedGamesRouteChildren: AuthenticatedGamesRouteChildren = {
 const AuthenticatedGamesRouteWithChildren =
   AuthenticatedGamesRoute._addFileChildren(AuthenticatedGamesRouteChildren)
 
+interface AuthenticatedP2pRouteChildren {
+  AuthenticatedP2pAgentRoute: typeof AuthenticatedP2pAgentRoute
+  AuthenticatedP2pOrderOrderIdRoute: typeof AuthenticatedP2pOrderOrderIdRoute
+}
+
+const AuthenticatedP2pRouteChildren: AuthenticatedP2pRouteChildren = {
+  AuthenticatedP2pAgentRoute: AuthenticatedP2pAgentRoute,
+  AuthenticatedP2pOrderOrderIdRoute: AuthenticatedP2pOrderOrderIdRoute,
+}
+
+const AuthenticatedP2pRouteWithChildren =
+  AuthenticatedP2pRoute._addFileChildren(AuthenticatedP2pRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedBlockedRoute: typeof AuthenticatedBlockedRoute
+  AuthenticatedCoinAgentsRoute: typeof AuthenticatedCoinAgentsRoute
   AuthenticatedCoinSellersRoute: typeof AuthenticatedCoinSellersRoute
-  AuthenticatedP2pAgentRoute: typeof AuthenticatedP2pAgentRoute
+  AuthenticatedCpRoute: typeof AuthenticatedCpRoute
   AuthenticatedCreateRoomRoute: typeof AuthenticatedCreateRoomRoute
   AuthenticatedCustomThemeRoute: typeof AuthenticatedCustomThemeRoute
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
@@ -3058,6 +3196,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedMyRoomsRoute: typeof AuthenticatedMyRoomsRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedP2pRoute: typeof AuthenticatedP2pRouteWithChildren
   AuthenticatedPartnerRoute: typeof AuthenticatedPartnerRoute
   AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
   AuthenticatedRechargeHistoryRoute: typeof AuthenticatedRechargeHistoryRoute
@@ -3079,9 +3218,9 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedBlockedRoute: AuthenticatedBlockedRoute,
-  AuthenticatedCpRoute: AuthenticatedCpRoute,
+  AuthenticatedCoinAgentsRoute: AuthenticatedCoinAgentsRoute,
   AuthenticatedCoinSellersRoute: AuthenticatedCoinSellersRoute,
-  AuthenticatedP2pAgentRoute: AuthenticatedP2pAgentRoute,
+  AuthenticatedCpRoute: AuthenticatedCpRoute,
   AuthenticatedCreateRoomRoute: AuthenticatedCreateRoomRoute,
   AuthenticatedCustomThemeRoute: AuthenticatedCustomThemeRoute,
   AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
@@ -3091,6 +3230,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedMyRoomsRoute: AuthenticatedMyRoomsRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedP2pRoute: AuthenticatedP2pRouteWithChildren,
   AuthenticatedPartnerRoute: AuthenticatedPartnerRoute,
   AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
   AuthenticatedRechargeHistoryRoute: AuthenticatedRechargeHistoryRoute,
