@@ -208,7 +208,25 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         return next;
       });
     };
-    const onSpeakers = (speakers: Participant[]) => setSpeakingUids(new Set(speakers.map((participant) => uidFromIdentity(participant.identity))));
+
+    // Memoized ActiveSpeakers: Do NOT trigger room re-render if the speaking UIDs are unchanged!
+    const onSpeakers = (speakers: Participant[]) => {
+      const nextUids = new Set(speakers.map((participant) => uidFromIdentity(participant.identity)));
+      setSpeakingUids((prev) => {
+        if (prev.size === nextUids.size) {
+          let unchanged = true;
+          for (const speakerId of nextUids) {
+            if (!prev.has(speakerId)) {
+              unchanged = false;
+              break;
+            }
+          }
+          if (unchanged) return prev; // Identical set, skip React state re-render
+        }
+        return nextUids;
+      });
+    };
+
     const refreshLiveKitToken = async () => {
       if (cancelled || tokenRefreshInFlightRef.current) return;
       tokenRefreshInFlightRef.current = true;
@@ -232,9 +250,6 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
 
         const currentRoom = roomRef.current;
         if (!currentRoom || cancelled) return;
-        // Once LiveKit has fully disconnected, reconnect the same Room instance
-        // with the fresh JWT. During a normal transient reconnect LiveKit owns
-        // its reconnect flow and may refresh its session token internally.
         if (currentRoom.state === "disconnected") {
           await currentRoom.connect(body.server_url, body.participant_token, { autoSubscribe: true });
           currentRoom.remoteParticipants.forEach(refresh);
@@ -253,8 +268,6 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
 
     const onDisconnected = (reason?: unknown) => {
       console.error("LiveKit Disconnected Reason:", reason);
-      console.error("LiveKit Disconnected Error Object:", reason);
-      console.error("LiveKit Disconnected Error Message:", reason instanceof Error ? reason.message : String(reason ?? "Unknown disconnect reason"));
       if (!cancelled) void refreshLiveKitToken();
     };
 
@@ -323,17 +336,11 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         room.remoteParticipants.forEach(refresh);
         setStatus("connected");
 
-        // Start muted. useZegoRoom synchronizes the server-side participant
-        // permission after connection, then explicitly requests microphone
-        // publishing only when the permission endpoint confirms it is allowed.
         setMuted(true);
         setMicBlocked(false);
         setMicError(null);
       } catch (joinError) {
-        console.error("LiveKit connect() failed - exact error object:", joinError);
-        console.error("LiveKit connect() failed - error message:", joinError instanceof Error ? joinError.message : String(joinError));
-        if (joinError instanceof Error && "name" in joinError) console.error("LiveKit connect() failed - error name:", joinError.name);
-        if (joinError instanceof Error && "cause" in joinError) console.error("LiveKit connect() failed - error cause:", (joinError as Error & { cause?: unknown }).cause);
+        console.error("LiveKit connect() failed:", joinError);
         if (cancelled) return;
         setStatus("error");
         setError(joinError instanceof Error ? joinError.message : "LiveKit connection failed");
@@ -443,6 +450,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     await Promise.all(Array.from(remoteAudioEls).map((element) => applySink(element)));
   }, []);
 
+  // Optimized mic meter: 300ms throttle + significant delta guard to prevent re-render thrashing
   useEffect(() => {
     if (muted || status !== "connected") {
       setMicLevel(0);
@@ -454,9 +462,8 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     const mediaTrack = track?.mediaStreamTrack;
     if (!mediaTrack) return;
 
-    let animation = 0;
+    let timer: ReturnType<typeof setInterval> | 0 = 0;
     let source: MediaStreamAudioSourceNode | null = null;
-    let lastUpdate = 0;
 
     try {
       if (!micMeterCtxRef.current || micMeterCtxRef.current.state === "closed") {
@@ -474,28 +481,22 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       source.connect(analyser);
       const data = new Uint8Array(analyser.frequencyBinCount);
 
-      const tick = (now: number) => {
-        if (now - lastUpdate >= 100) {
-          lastUpdate = now;
-          analyser.getByteTimeDomainData(data);
-          let sum = 0;
-          for (let i = 0; i < data.length; i += 1) {
-            const value = (data[i] - 128) / 128;
-            sum += value * value;
-          }
-          const level = Math.min(1, Math.sqrt(sum / data.length) * 3);
-          setMicLevel((prev) => (Math.abs(prev - level) > 0.05 ? level : prev));
+      timer = setInterval(() => {
+        analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 1) {
+          const value = (data[i] - 128) / 128;
+          sum += value * value;
         }
-        animation = requestAnimationFrame(tick);
-      };
-
-      animation = requestAnimationFrame(tick);
+        const level = Math.min(1, Math.sqrt(sum / data.length) * 3);
+        setMicLevel((prev) => (Math.abs(prev - level) > 0.15 ? level : prev));
+      }, 300);
     } catch (err) {
       console.warn("[LiveKit] Audio meter initialization failed", err);
     }
 
     return () => {
-      cancelAnimationFrame(animation);
+      if (timer) clearInterval(timer);
       source?.disconnect();
       setMicLevel(0);
       if (micMeterCtxRef.current?.state === "running") {
