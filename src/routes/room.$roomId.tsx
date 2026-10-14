@@ -1,28 +1,28 @@
-import "../voice-room-reference.css";
-import "../voice-room-mobile.css";
-import "../voice-room-mobile-final.css";
-import "../voice-room-mobile-components.css";
-import "../voice-room-mobile-content.css";
-import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
-import { VipBadge } from "@/components/vip/VipBadge";
-import { vipTierForLevel } from "@/lib/vip-levels";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { RoomState, RoomParticipant, RoomSeat } from "@/types/room";
-import { VoiceRoomScreen } from "@/components/voice-room/VoiceRoomScreen";
-import { useAuth } from "@/hooks/useAuth";
-import { getCpPublicPartner } from "@/lib/cp/cpApi";
-import { useVoiceRoomSession } from "@/context/VoiceRoomSessionContext";
-import { nativePlatform } from "@/lib/native";
-import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
-import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
-import hostThroneAsset from "@/assets/room/host-throne.png.asset.json";
-import { resolveAssetUrl } from "@/lib/assetUrl";
+import"../voice-room-reference.css";
+import"../voice-room-mobile.css";
+import"../voice-room-mobile-final.css";
+import"../voice-room-mobile-components.css";
+import"../voice-room-mobile-content.css";
+import { createFileRoute, Link, useNavigate, redirect } from"@tanstack/react-router";
+import { VipBadge } from"@/components/vip/VipBadge";
+import { vipTierForLevel } from"@/lib/vip-levels";
+import { useQuery, useQueryClient } from"@tanstack/react-query";
+import { supabase } from"@/integrations/supabase/client";
+import { RoomState, RoomParticipant, RoomSeat } from"@/types/room";
+import { VoiceRoomScreen } from"@/components/voice-room/VoiceRoomScreen";
+import { useAuth } from"@/hooks/useAuth";
+import { getCpPublicPartner } from"@/lib/cp/cpApi";
+import { useVoiceRoomSession } from"@/context/VoiceRoomSessionContext";
+import { nativePlatform } from"@/lib/native";
+import { useDefaultBgOpacity } from"@/hooks/useDefaultBgOpacity";
+import { resolveLuxuryGiftMp4Url } from"@/lib/luxuryGiftMp4";
+import hostThroneAsset from"@/assets/room/host-throne.png.asset.json";
+import { resolveAssetUrl } from"@/lib/assetUrl";
 const HOST_THRONE_URL = resolveAssetUrl(hostThroneAsset.url)!;
 
-import { useZegoRoom as useAgoraRoom } from "@/hooks/useZegoRoom";
-import { useRoomHeartbeat } from "@/hooks/useRoomHeartbeat";
-import { RoomDiagnostics } from "@/components/room/RoomDiagnostics";
+import { useZegoRoom as useAgoraRoom } from"@/hooks/useZegoRoom";
+import { useRoomHeartbeat } from"@/hooks/useRoomHeartbeat";
+import { RoomDiagnostics } from"@/components/room/RoomDiagnostics";
 import {
   Flag,
   Share2,
@@ -64,42 +64,42 @@ import {
   Pause,
   X,
   DoorOpen,
-} from "lucide-react";
+} from"lucide-react";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
-import { GiftSheet, type GiftReceiver, type Gift as ShopGift } from "@/components/GiftSheet";
-import { ComboGiftButton, type ComboState } from "@/components/room/ComboGiftButton";
-import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
-import { EntrancePlayer } from "@/components/room/EntrancePlayer";
-import SvgaPlayer from "@/components/room/SvgaPlayer";
-import { useRoomEntrances } from "@/hooks/useRoomEntrances";
-import GiftComboHud from "@/components/room/GiftComboHud";
-import { GiftAudioControl } from "@/components/room/GiftAudioControl";
-import { TapHearts } from "@/components/room/TapHearts";
-import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
-import { RoomGamesSheet } from "@/components/room/RoomGamesSheet";
-import { SlotsGamePopup } from "@/components/room/SlotsGamePopup";
-import { CrashXGame } from "@/components/room/casino/CrashXGame";
-import { DragonTigerGame } from "@/components/room/casino/DragonTigerGame";
-import { InOutGame } from "@/components/room/casino/InOutGame";
-import { PlinkoGame } from "@/components/room/casino/PlinkoGame";
-import { UnderOver7 } from "@/components/room/casino/games/UnderOver7";
-import { CrashPoint } from "@/components/room/casino/games/CrashPoint";
-import { ScratchCard } from "@/components/room/casino/games/ScratchCard";
-import { AppleOfFortune } from "@/components/room/casino/games/AppleOfFortune";
-import { SpinWin } from "@/components/room/casino/games/SpinWin";
-import { VampireCurse } from "@/components/room/casino/games/VampireCurse";
-import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
-import { HostRoomMoreSheet } from "@/components/room/HostRoomMoreSheet";
-import { InviteSheet } from "@/components/room/InviteSheet";
-import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
-import { CamStudio } from "@/components/room/CamStudio";
-import { ProfileSpotlight } from "@/components/room/ProfileSpotlight";
-import { JalwaPrivateChat } from "@/components/room/JalwaPrivateChat";
-import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from"react";
+import { toast } from"sonner";
+import { GiftSheet, type GiftReceiver, type Gift as ShopGift } from"@/components/GiftSheet";
+import { ComboGiftButton, type ComboState } from"@/components/room/ComboGiftButton";
+import { GiftAnimationPlayer } from"@/components/room/GiftAnimationPlayer";
+import { EntrancePlayer } from"@/components/room/EntrancePlayer";
+import SvgaPlayer from"@/components/room/SvgaPlayer";
+import { useRoomEntrances } from"@/hooks/useRoomEntrances";
+import GiftComboHud from"@/components/room/GiftComboHud";
+import { GiftAudioControl } from"@/components/room/GiftAudioControl";
+import { TapHearts } from"@/components/room/TapHearts";
+import { LudoSheet, type LudoPlayer } from"@/components/room/LudoSheet";
+import { RoomGamesSheet } from"@/components/room/RoomGamesSheet";
+import { SlotsGamePopup } from"@/components/room/SlotsGamePopup";
+import { CrashXGame } from"@/components/room/casino/CrashXGame";
+import { DragonTigerGame } from"@/components/room/casino/DragonTigerGame";
+import { InOutGame } from"@/components/room/casino/InOutGame";
+import { PlinkoGame } from"@/components/room/casino/PlinkoGame";
+import { UnderOver7 } from"@/components/room/casino/games/UnderOver7";
+import { CrashPoint } from"@/components/room/casino/games/CrashPoint";
+import { ScratchCard } from"@/components/room/casino/games/ScratchCard";
+import { AppleOfFortune } from"@/components/room/casino/games/AppleOfFortune";
+import { SpinWin } from"@/components/room/casino/games/SpinWin";
+import { VampireCurse } from"@/components/room/casino/games/VampireCurse";
+import { HostMusicPlayer } from"@/components/room/HostMusicPlayer";
+import { HostRoomMoreSheet } from"@/components/room/HostRoomMoreSheet";
+import { InviteSheet } from"@/components/room/InviteSheet";
+import { CamPipelineProvider, useCamPipeline } from"@/hooks/useCamPipeline";
+import { CamStudio } from"@/components/room/CamStudio";
+import { ProfileSpotlight } from"@/components/room/ProfileSpotlight";
+import { JalwaPrivateChat } from"@/components/room/JalwaPrivateChat";
+import { ChatEmojiSheet, type ChatEmoji } from"@/components/chat/ChatEmojiSheet";
 
-import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
+import defaultBgAsset from"@/assets/jalwa-default-bg.png.asset.json";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -109,7 +109,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from"@/components/ui/alert-dialog";
 
 const PipelineBridge = ({ bridgeRef }: { bridgeRef: React.MutableRefObject<any> }) => {
   const pipeline = useCamPipeline();
@@ -125,7 +125,7 @@ const PipelineBridge = ({ bridgeRef }: { bridgeRef: React.MutableRefObject<any> 
   return null;
 };
 
-const DEFAULT_BG_URL = "https://cloud-to-soul.lovable.app/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
+const DEFAULT_BG_URL ="https://cloud-to-soul.lovable.app/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
 
 function RoomEntranceMount({ roomId, userId }: { roomId: string; userId: string | null }) {
   const { current, done } = useRoomEntrances(roomId, userId);
@@ -141,7 +141,7 @@ export const Route = createFileRoute("/room/$roomId")({
       .select("pk_battle,room_type,seat_count")
       .eq("id", params.roomId)
       .maybeSingle();
-    const isPk = !!(data && (data.pk_battle || (data.room_type === "video" && data.seat_count === 2)));
+    const isPk = !!(data && (data.pk_battle || (data.room_type ==="video" && data.seat_count === 2)));
     void isPk; // PK rooms render their dedicated layout inside this route.
   },
   component: RoomPage,
@@ -151,8 +151,8 @@ type Room = {
   id: string;
   title: string;
   cover_url: string | null;
-  room_type: "voice" | "video";
-  status: "live" | "ended" | "host_disconnected";
+  room_type:"voice" |"video";
+  status:"live" |"ended" |"host_disconnected";
   viewer_count: number;
   seat_count: number;
   host_id: string;
@@ -233,7 +233,7 @@ function shortRoomCode(id: string) {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
   const num = Math.abs(h) % 100_000_000;
-  return String(num).padStart(8, "0");
+  return String(num).padStart(8,"0");
 }
 
 
@@ -250,11 +250,11 @@ function RoomPage() {
     if (!user?.id) return;
     updateRoom({
       roomId,
-      roomRoute: `/room/${encodeURIComponent(roomId)}`,
+      roomRoute:`/room/${encodeURIComponent(roomId)}`,
       userId: user.id,
-      userRole: "user",
+      userRole:"user",
       isMinimized: false,
-      connectionState: "connected",
+      connectionState:"connected",
       microphoneMuted: false,
     });
   }, [roomId, user?.id, updateRoom]);
@@ -271,7 +271,7 @@ function RoomPage() {
   // mobile browsers auto-scroll the nearest scrollable ancestor to keep the
   // focused input visible above the keyboard, dragging the entire room
   // (header, seats, everything) up with it even though the composer itself
-  // is `position: fixed`. Locking body scroll + pinning its position stops
+  // is`position: fixed`. Locking body scroll + pinning its position stops
   // that reflow; only the small composer bar reacts to the keyboard.
   useEffect(() => {
     if (!chatComposerOpen) return;
@@ -285,12 +285,12 @@ function RoomPage() {
       width: body.style.width,
       overflow: body.style.overflow,
     };
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.left = "0";
-    body.style.right = "0";
-    body.style.width = "100%";
-    body.style.overflow = "hidden";
+    body.style.position ="fixed";
+    body.style.top =`-${scrollY}px`;
+    body.style.left ="0";
+    body.style.right ="0";
+    body.style.width ="100%";
+    body.style.overflow ="hidden";
     return () => {
       body.style.position = prev.position;
       body.style.top = prev.top;
@@ -303,10 +303,10 @@ function RoomPage() {
   }, [chatComposerOpen]);
 
   // Some mobile browsers (notably Xiaomi/MIUI's browser and some in-app
-  // WebViews) don't respect `position: fixed` correctly once the on-screen
-  // keyboard opens — the whole page still visibly shifts. The `visualViewport`
+  // WebViews) don't respect`position: fixed` correctly once the on-screen
+  // keyboard opens — the whole page still visibly shifts. The`visualViewport`
   // API reports the REAL visible area regardless of that, so we track it
-  // directly and pin the composer's `bottom` offset in pixels ourselves
+  // directly and pin the composer's`bottom` offset in pixels ourselves
   // instead of trusting the browser's fixed-positioning math.
   const [keyboardOffset, setKeyboardOffset] = useState(0);
   useEffect(() => {
@@ -543,8 +543,7 @@ function RoomPage() {
   const room = useQuery({
     queryKey: ["room", roomId],
     queryFn: async () => {
-      const baseCols =
-        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,rtc_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,country,country_code,city,frame,vip_level,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
+      const baseCols ="id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,rtc_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,country,country_code,city,frame,vip_level,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
       // Try with milestone + pk columns; fall back if migration not applied yet.
       let { data, error } = (await supabase
         .from("live_rooms")
@@ -574,7 +573,7 @@ function RoomPage() {
   const myMember = members.find((m) => m.user_id === user?.id) ?? null;
   const iAmOnSeat = myMember?.seat_index != null;
   const shouldPublish = isHost || iAmOnSeat;
-  const isVideo = room.data?.room_type === "video";
+  const isVideo = room.data?.room_type ==="video";
   const isModerator = !!myMember?.is_moderator;
   const seatedMemberKey = members
     .filter((member) => member.seat_index !== null && member.seat_index !== undefined)
@@ -634,7 +633,7 @@ function RoomPage() {
   const endedNoticedRef = useRef(false);
   useEffect(() => {
     if (!room.data) return;
-    if (room.data.status !== "ended") return;
+    if (room.data.status !=="ended") return;
     if (isHost) return;
     if (endedNoticedRef.current) return;
     endedNoticedRef.current = true;
@@ -646,14 +645,14 @@ function RoomPage() {
         .eq("room_id", roomId)
         .eq("user_id", user.id);
     }
-    navigate({ to: "/" });
+    navigate({ to:"/" });
   }, [room.data, isHost, user, roomId, navigate]);
 
 
   // Auto-scroll chat to newest on every new message
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    chatEndVideoRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    chatEndRef.current?.scrollIntoView({ behavior:"smooth", block:"end" });
+    chatEndVideoRef.current?.scrollIntoView({ behavior:"smooth", block:"end" });
   }, [messages.length]);
 
   const agora = useAgoraRoom({
@@ -661,8 +660,8 @@ function RoomPage() {
     uid: myUid,
     publish: shouldPublish,
     video: isVideo,
-    kind: isVideo ? "video" : "voice",
-    enabled: !!user && !!room.data && room.data.status === "live",
+    kind: isVideo ?"video" :"voice",
+    enabled: !!user && !!room.data && room.data.status ==="live",
   });
 
   // Wrapper that hands the CamPipeline processor callbacks (populated by
@@ -682,7 +681,7 @@ function RoomPage() {
   const mySeatIndex = myMember?.seat_index ?? null;
   useEffect(() => {
     if (!isVideo) return;
-    if (agora.status !== "connected") return;
+    if (agora.status !=="connected") return;
     if (isHost) return;
     if (mySeatIndex === null) return;
     const onCamSeat = mySeatIndex === 0 || mySeatIndex === 1;
@@ -696,8 +695,7 @@ function RoomPage() {
     const loadMembers = async () => {
       const withSeatedAt = await supabase
         .from("room_members")
-        .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
+        .select("room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
         )
         .eq("room_id", roomId);
       if (!withSeatedAt.error || !/seated_at/i.test(withSeatedAt.error.message)) {
@@ -705,8 +703,7 @@ function RoomPage() {
       }
       return supabase
         .from("room_members")
-        .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
+        .select("room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
         )
         .eq("room_id", roomId);
     };
@@ -720,8 +717,7 @@ function RoomPage() {
       loadMembers(),
       supabase
         .from("room_messages")
-        .select(
-          "id,user_id,kind,text,message,created_at,sender_username,sender_avatar,sender_level,client_id,reply_to_id,reply_to_username,reply_to_text,mentions",
+        .select("id,user_id,kind,text,message,created_at,sender_username,sender_avatar,sender_level,client_id,reply_to_id,reply_to_username,reply_to_text,mentions",
         )
         .eq("room_id", roomId)
         .order("created_at", { ascending: false })
@@ -794,8 +790,7 @@ function RoomPage() {
       .from("gift_sends")
       .select("receiver_id,coins_spent,created_at")
       .eq("room_id", roomId)
-      .in(
-        "receiver_id",
+      .in("receiver_id",
         seatedMembers.map((member) => member.user_id),
       )
       .gte("created_at", earliestSeatStart);
@@ -829,21 +824,20 @@ function RoomPage() {
   useEffect(() => {
     const ch = supabase
       .channel(`room-${roomId}`)
-      .on(
-        "postgres_changes",
+      .on("postgres_changes",
         {
-          event: "INSERT",
-          schema: "public",
-          table: "room_messages",
-          filter: `room_id=eq.${roomId}`,
+          event:"INSERT",
+          schema:"public",
+          table:"room_messages",
+          filter:`room_id=eq.${roomId}`,
         },
         async (payload) => {
           const row = payload.new as Message;
           row.text = row.text ?? row.message ?? null;
-          if (row.kind === "emoji") {
-            // New: "😀|fromSeat|toSeat|clip". Old fallback: "😀|toSeat|clip".
-            const parts = (row.text ?? "").split("|");
-            const emoji = parts[0] ?? "😀";
+          if (row.kind ==="emoji") {
+            // New:"😀|fromSeat|toSeat|clip". Old fallback:"😀|toSeat|clip".
+            const parts = (row.text ??"").split("|");
+            const emoji = parts[0] ??"😀";
             const firstSeat = Number(parts[1] ?? 0);
             const secondSeat = parts[2] != null ? Number(parts[2]) : NaN;
             const hasFromSeat = Number.isFinite(secondSeat);
@@ -868,31 +862,30 @@ function RoomPage() {
 
         },
       )
-      .on(
-        "postgres_changes",
+      .on("postgres_changes",
         {
-          event: "*",
-          schema: "public",
-          table: "room_members",
-          filter: `room_id=eq.${roomId}`,
+          event:"*",
+          schema:"public",
+          table:"room_members",
+          filter:`room_id=eq.${roomId}`,
         },
         async (payload) => {
           // If host/mod kicked me out, bounce me back to home.
           if (
-            payload.eventType === "DELETE" &&
+            payload.eventType ==="DELETE" &&
             user &&
             (payload.old as { user_id?: string })?.user_id === user.id &&
             !isHost
           ) {
             toast.error("You were removed from this room");
-            navigate({ to: "/" });
+            navigate({ to:"/" });
             return;
           }
           // SCALE FIX: patch state from payload instead of refetching the whole
           // room_members list. In a 5,000-viewer room, one seat change would
           // otherwise trigger 5,000 simultaneous full-table selects.
           const evt = payload.eventType;
-          if (evt === "DELETE") {
+          if (evt ==="DELETE") {
             const removed = payload.old as { user_id?: string };
             if (!removed?.user_id) return;
             setMembers((prev) => {
@@ -922,7 +915,7 @@ function RoomPage() {
           };
           if (!row?.user_id) return;
           // For UPDATE, merge into existing row (profile already loaded).
-          if (evt === "UPDATE") {
+          if (evt ==="UPDATE") {
             setMembers((prev) => {
               const next = prev.map((m) =>
                 m.user_id === row.user_id
@@ -933,8 +926,7 @@ function RoomPage() {
                       is_video: row.is_video,
                       is_moderator: row.is_moderator ?? m.is_moderator,
                       joined_at: row.joined_at ?? m.joined_at ?? null,
-                      seated_at:
-                        "seated_at" in row
+                      seated_at:"seated_at" in row
                           ? row.seated_at ?? null
                           : row.seat_index == null
                             ? null
@@ -990,26 +982,24 @@ function RoomPage() {
         },
 
       )
-      .on(
-        "postgres_changes",
+      .on("postgres_changes",
         {
-          event: "INSERT",
-          schema: "public",
-          table: "room_seat_likes",
-          filter: `room_id=eq.${roomId}`,
+          event:"INSERT",
+          schema:"public",
+          table:"room_seat_likes",
+          filter:`room_id=eq.${roomId}`,
         },
         (payload) => {
           const row = payload.new as { seat_index: number };
           setPopularity((p) => ({ ...p, like_count: p.like_count + 1 }));
         },
       )
-      .on(
-        "postgres_changes",
+      .on("postgres_changes",
         {
-          event: "INSERT",
-          schema: "public",
-          table: "gift_sends",
-          filter: `room_id=eq.${roomId}`,
+          event:"INSERT",
+          schema:"public",
+          table:"gift_sends",
+          filter:`room_id=eq.${roomId}`,
         },
         (payload) => {
           const row = payload.new as {
@@ -1048,13 +1038,12 @@ function RoomPage() {
         },
 
       )
-      .on(
-        "postgres_changes",
+      .on("postgres_changes",
         {
-          event: "UPDATE",
-          schema: "public",
-          table: "live_rooms",
-          filter: `id=eq.${roomId}`,
+          event:"UPDATE",
+          schema:"public",
+          table:"live_rooms",
+          filter:`id=eq.${roomId}`,
         },
         (payload) => {
           const row = payload.new as Partial<Room> & { locked_seats: number[] | null };
@@ -1071,7 +1060,7 @@ function RoomPage() {
         // events that fired while the socket was down. React Query already
         // refetches the room row on reconnect; do the same for members,
         // messages, likes, gifts and popularity.
-        if (status === "SUBSCRIBED") {
+        if (status ==="SUBSCRIBED") {
           void loadRoomState();
           void room.refetch();
         }
@@ -1082,7 +1071,7 @@ function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, qc, loadRoomState]);
 
-  // Local "recent gift" flash only — score/popularity/giftPoints are
+  // Local"recent gift" flash only — score/popularity/giftPoints are
   // driven exclusively by the realtime gift_sends INSERT event to avoid
   // double-counting (local + realtime were both adding coins).
   useEffect(() => {
@@ -1149,7 +1138,7 @@ function RoomPage() {
         .select("id,room_id,from_user,seat_index,status")
         .eq("room_id", roomId)
         .eq("to_user", user.id)
-        .eq("status", "pending")
+        .eq("status","pending")
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();
@@ -1171,13 +1160,12 @@ function RoomPage() {
 
     const ch = supabase
       .channel(`seat-invites-${user.id}-${roomId}`)
-      .on(
-        "postgres_changes",
+      .on("postgres_changes",
         {
-          event: "INSERT",
-          schema: "public",
-          table: "seat_invites",
-          filter: `to_user=eq.${user.id}`,
+          event:"INSERT",
+          schema:"public",
+          table:"seat_invites",
+          filter:`to_user=eq.${user.id}`,
         },
         async (payload) => {
           const row = payload.new as {
@@ -1187,7 +1175,7 @@ function RoomPage() {
             seat_index: number | null;
             status: string;
           };
-          if (row.room_id !== roomId || row.status !== "pending") return;
+          if (row.room_id !== roomId || row.status !=="pending") return;
           const { data } = await supabase
             .from("profiles")
             .select("username,avatar")
@@ -1221,7 +1209,7 @@ function RoomPage() {
         .from("seat_requests")
         .select("id,from_user,seat_index,status")
         .eq("room_id", roomId)
-        .eq("status", "pending")
+        .eq("status","pending")
         .order("created_at", { ascending: true })
         .limit(10);
       if (cancelled || !data || data.length === 0) return;
@@ -1248,13 +1236,12 @@ function RoomPage() {
 
     const ch = supabase
       .channel(`seat-requests-${roomId}-${user.id}`)
-      .on(
-        "postgres_changes",
+      .on("postgres_changes",
         {
-          event: "INSERT",
-          schema: "public",
-          table: "seat_requests",
-          filter: `room_id=eq.${roomId}`,
+          event:"INSERT",
+          schema:"public",
+          table:"seat_requests",
+          filter:`room_id=eq.${roomId}`,
         },
         async (payload) => {
           const row = payload.new as {
@@ -1263,7 +1250,7 @@ function RoomPage() {
             seat_index: number | null;
             status: string;
           };
-          if (row.status !== "pending") return;
+          if (row.status !=="pending") return;
           const { data } = await supabase
             .from("profiles")
             .select("username,avatar")
@@ -1313,19 +1300,19 @@ function RoomPage() {
         .insert({ room_id: roomId, user_id: user.id, seat_index: seatIndex });
       if (memberErr) {
         if (/BANNED/i.test(memberErr.message)) {
-          toast.error(memberErr.message.replace(/^BANNED:\s*/i, ""));
-          navigate({ to: "/" });
+          toast.error(memberErr.message.replace(/^BANNED:\s*/i,""));
+          navigate({ to:"/" });
           return;
         }
         console.warn("[room-members insert]", memberErr.message);
         return;
       }
-      const joinText = isHost ? "started the room" : "entered the room";
+      const joinText = isHost ?"started the room" :"entered the room";
       const { error: msgErr } = await supabase.from("room_messages").insert({
         room_id: roomId,
         user_id: user.id,
-        username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
-        kind: "join",
+        username: profile?.username ?? user.email?.split("@")[0] ??"Guest",
+        kind:"join",
         text: joinText,
         message: joinText,
       });
@@ -1353,7 +1340,7 @@ function RoomPage() {
 
     const onPageHide = () => {
       // Android/iOS backgrounding is not a room exit; keep the seat for resume.
-      if (nativePlatform() === "web") removeMembership();
+      if (nativePlatform() ==="web") removeMembership();
     };
     window.addEventListener("pagehide", onPageHide);
     window.addEventListener("beforeunload", onPageHide);
@@ -1364,7 +1351,7 @@ function RoomPage() {
       // Minimizing routes Home but must not remove the user's seat/membership.
       let minimized = false;
       try {
-        const saved = JSON.parse(localStorage.getItem("jalwa:active-voice-room") || "null");
+        const saved = JSON.parse(localStorage.getItem("jalwa:active-voice-room") ||"null");
         minimized = saved?.roomId === rid && saved?.isMinimized === true;
       } catch {}
       if (!minimized) removeMembership();
@@ -1439,7 +1426,7 @@ function RoomPage() {
       .from("follows")
       .upsert(
         { follower_id: user.id, following_id: room.data.host_id },
-        { onConflict: "follower_id,following_id", ignoreDuplicates: true },
+        { onConflict:"follower_id,following_id", ignoreDuplicates: true },
       );
     if (error) {
       toast.error(error.message);
@@ -1449,7 +1436,7 @@ function RoomPage() {
     followsHost.refetch();
   }
 
-  // Daily "love" heart — 100 coins/day → host
+  // Daily"love" heart — 100 coins/day → host
   const lastLove = useQuery({
     enabled: !!user && !!room.data?.host_id && user?.id !== room.data?.host_id,
     queryKey: ["host-love", user?.id, room.data?.host_id],
@@ -1588,7 +1575,7 @@ function RoomPage() {
       toast.error("Sign in to chat");
       return;
     }
-    const v = (retryOf ? (retryOf.text ?? "") : text).trim();
+    const v = (retryOf ? (retryOf.text ??"") : text).trim();
     if (!v) return;
 
     const clientId = retryOf?.client_id ?? crypto.randomUUID();
@@ -1601,17 +1588,17 @@ function RoomPage() {
       : {
           reply_to_id: replyTo?.id ?? null,
           reply_to_username: replyTo?.user?.username ?? replyTo?.sender_username ?? null,
-          reply_to_text: replyTo ? (replyTo.text ?? replyTo.message ?? "").slice(0, 120) : null,
+          reply_to_text: replyTo ? (replyTo.text ?? replyTo.message ??"").slice(0, 120) : null,
         };
     const mentions = parseMentions(v);
 
     // Optimistic echo: the message shows instantly, then the realtime INSERT
     // (or the insert response) reconciles it via client_id.
     const optimistic: Message = {
-      id: `local-${clientId}`,
+      id:`local-${clientId}`,
       client_id: clientId,
       user_id: user.id,
-      kind: "chat",
+      kind:"chat",
       text: v,
       message: v,
       created_at: new Date().toISOString(),
@@ -1619,7 +1606,7 @@ function RoomPage() {
       ...reply,
       pending: true,
       user: {
-        username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
+        username: profile?.username ?? user.email?.split("@")[0] ??"Guest",
         avatar: profile?.avatar ?? null,
         level: profile?.vip_level ?? 0,
       },
@@ -1637,16 +1624,15 @@ function RoomPage() {
       .insert({
         room_id: roomId,
         user_id: user.id,
-        username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
-        kind: "chat",
+        username: profile?.username ?? user.email?.split("@")[0] ??"Guest",
+        kind:"chat",
         text: v,
         message: v,
         client_id: clientId,
         mentions,
         ...reply,
       })
-      .select(
-        "id,user_id,kind,text,message,created_at,sender_username,sender_avatar,sender_level,client_id,reply_to_id,reply_to_username,reply_to_text,mentions",
+      .select("id,user_id,kind,text,message,created_at,sender_username,sender_avatar,sender_level,client_id,reply_to_id,reply_to_username,reply_to_text,mentions",
       )
       .maybeSingle();
 
@@ -1709,13 +1695,13 @@ function RoomPage() {
       return;
     }
     const emojiText = clip
-      ? `${emoji}|${fromSeat}|${seatIndex}|${encodeURIComponent(clip)}`
-      : `${emoji}|${fromSeat}|${seatIndex}`;
+      ?`${emoji}|${fromSeat}|${seatIndex}|${encodeURIComponent(clip)}`
+      :`${emoji}|${fromSeat}|${seatIndex}`;
     const { data, error } = await supabase.from("room_messages").insert({
       room_id: roomId,
       user_id: user.id,
-      username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
-      kind: "emoji",
+      username: profile?.username ?? user.email?.split("@")[0] ??"Guest",
+      kind:"emoji",
       text: emojiText,
       message: emojiText,
     }).select("id").single();
@@ -1789,25 +1775,24 @@ function RoomPage() {
   //   3) Room screen top pe hai + viewer → seedha room chhod do (viewers ke
   //      liye confirm irritating hai, wo kabhi bhi easily leave kar sakte hain).
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const SENTINEL = "jalwa-room-back-guard";
+    if (typeof window ==="undefined") return;
+    const SENTINEL ="jalwa-room-back-guard";
     try {
-      window.history.pushState({ [SENTINEL]: true }, "");
+      window.history.pushState({ [SENTINEL]: true },"");
     } catch { /* no-op */ }
 
     const closeTopOverlay = (): boolean => {
       if (roomBackGuardRef.current.closeTopOverlay()) return true;
 
       // Radix dialogs / sheets / popovers / dropdowns close on Escape.
-      const radix = document.querySelector(
-        '[data-state="open"][role="dialog"], [data-state="open"][role="menu"], [data-radix-popper-content-wrapper]',
+      const radix = document.querySelector('[data-state="open"][role="dialog"], [data-state="open"][role="menu"], [data-radix-popper-content-wrapper]',
       );
       // Custom overlays (GiftSheet etc.) — tagged with data-jalwa-overlay.
       const custom = document.querySelector<HTMLElement>('[data-jalwa-overlay="true"]');
       if (!radix && !custom) return false;
       try {
-        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
-        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        window.dispatchEvent(new KeyboardEvent("keydown", { key:"Escape" }));
+        document.dispatchEvent(new KeyboardEvent("keydown", { key:"Escape" }));
       } catch { /* no-op */ }
       if (custom) {
         try { custom.click(); } catch { /* no-op */ }
@@ -1817,7 +1802,7 @@ function RoomPage() {
 
     const onPop = (_e: PopStateEvent) => {
       try {
-        window.history.pushState({ [SENTINEL]: true }, "");
+        window.history.pushState({ [SENTINEL]: true },"");
       } catch { /* no-op */ }
       if (Date.now() < suppressNextRoomPopUntilRef.current) return;
       if (closeTopOverlay()) return;
@@ -1844,10 +1829,10 @@ function RoomPage() {
   }, [isHost]);
 
 
-  async function doLeaveRoom(mode: "grace" | "end" = "grace") {
+  async function doLeaveRoom(mode:"grace" |"end" ="grace") {
     if (user && isHost) {
       try {
-        if (mode === "end") {
+        if (mode ==="end") {
           const { error } = await supabase.rpc("end_room", { _room_id: roomId });
           if (error) throw error;
         } else {
@@ -1876,7 +1861,7 @@ function RoomPage() {
     // Navigate immediately after the room membership/session is cleared.
     // Do not require a page reload and do not leave the user stuck on the
     // room route while an exit animation timer is pending.
-    void navigate({ to: "/", replace: true });
+    void navigate({ to:"/", replace: true });
   }
 
 
@@ -1918,7 +1903,7 @@ function RoomPage() {
   const latestEnter = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       const m = messages[i];
-      if (m.kind === "join" || m.kind === "system") return m;
+      if (m.kind ==="join" || m.kind ==="system") return m;
     }
     return null;
   }, [messages]);
@@ -1927,7 +1912,7 @@ function RoomPage() {
     const m = seatsByIndex.get(i);
     return m
       ? { id: m.user_id, username: m.user?.username ?? null, avatar: m.user?.avatar ?? null, country: m.user?.country ?? null, country_code: m.user?.country_code ?? null, city: (m.user as { city?: string | null } | undefined)?.city ?? null }
-      : { id: `empty-${i}`, username: null, avatar: null };
+      : { id:`empty-${i}`, username: null, avatar: null };
   });
 
   function openLudo() {
@@ -1947,7 +1932,7 @@ function RoomPage() {
       return;
     }
     // Anyone else (viewer OR host/moderator) → open mini profile popup.
-    // For host/mod, the popup exposes a "Manage seat" button that opens
+    // For host/mod, the popup exposes a"Manage seat" button that opens
     // the full SeatActionSheet (kick / mute / lock etc.).
     setMiniProfileUser({
       id: seated.user_id,
@@ -1991,10 +1976,9 @@ function RoomPage() {
 
       try {
         const response = await fetch("/api/livekit-permissions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
+          method:"POST",
+          headers: {"Content-Type":"application/json",
+            Authorization:`Bearer ${accessToken}`,
           },
           body: JSON.stringify({ room: canonicalRoom, canPublish: true }),
         });
@@ -2007,7 +1991,7 @@ function RoomPage() {
             member.user_id === user.id ? { ...member, is_muted: true } : member
           ));
           console.warn("[voice-room] microphone permission sync rejected", permission.error);
-          toast.error(permission.error ?? "Microphone publishing is not allowed for this seat.");
+          toast.error(permission.error ??"Microphone publishing is not allowed for this seat.");
           return;
         }
 
@@ -2015,15 +1999,15 @@ function RoomPage() {
         // confirms that this participant has canPublish permission.
         const result = await agora.requestMic();
         if (!result.ok) {
-          const message = result.error ?? agora.micError ?? "Microphone unavailable";
+          const message = result.error ?? agora.micError ??"Microphone unavailable";
           toast.error(message, {
             description: /permission|blocked|allow|insufficient permissions|failed to publish track/i.test(message)
-              ? (nativePlatform() === "android"
-                ? "Phone Settings → Apps → Jalwa → Permissions → Microphone check karein."
-                : nativePlatform() === "ios"
-                  ? "iPhone Settings → Jalwa → Microphone check karein."
-                  : "Browser Site settings → Microphone → Allow karein.")
-              : "Doosri audio app band karke mic dobara try karein.",
+              ? (nativePlatform() ==="android"
+                ?"Phone Settings → Apps → Jalwa → Permissions → Microphone check karein."
+                : nativePlatform() ==="ios"
+                  ?"iPhone Settings → Jalwa → Microphone check karein."
+                  :"Browser Site settings → Microphone → Allow karein.")
+              :"Doosri audio app band karke mic dobara try karein.",
             duration: 8000,
           });
           return;
@@ -2040,7 +2024,7 @@ function RoomPage() {
     }
 
     // Compute the post-toggle value BEFORE the toggle so the DB write matches
-    // the new state — `agora.muted` is React state that only updates on next
+    // the new state —`agora.muted` is React state that only updates on next
     // render.
     const nextMuted = !agora.muted;
     await agora.toggleMute();
@@ -2058,8 +2042,8 @@ function RoomPage() {
   useEffect(() => {
     if (agora.micBlocked && agora.micError && shouldPublish) {
       toast.error(agora.micError, {
-        id: "mic-blocked",
-        description: "Tap the mic button to retry after allowing access.",
+        id:"mic-blocked",
+        description:"Tap the mic button to retry after allowing access.",
         duration: 8000,
       });
     }
@@ -2079,7 +2063,7 @@ function RoomPage() {
         <div className="max-w-sm">
           <p className="text-sm font-semibold text-destructive">Failed to load room</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {(room.error as Error)?.message ?? "Please check your connection."}
+            {(room.error as Error)?.message ??"Please check your connection."}
           </p>
           <button
             onClick={() => void room.refetch()}
@@ -2132,19 +2116,19 @@ function RoomPage() {
 
   const hostRemote = agora.remotes.get(uidFromUuid(r.host_id));
 
-  // Host's shop theme (only when it belongs to the "theme" category)
+  // Host's shop theme (only when it belongs to the"theme" category)
   const hostTheme = r.host?.theme ?? null;
-  const hostThemeSlug = (hostTheme?.theme_categories?.slug ?? "").toLowerCase();
+  const hostThemeSlug = (hostTheme?.theme_categories?.slug ??"").toLowerCase();
   const hostBg =
     hostTheme &&
-    (!hostTheme.category_id || hostThemeSlug === "theme" || hostThemeSlug === "themes")
+    (!hostTheme.category_id || hostThemeSlug ==="theme" || hostThemeSlug ==="themes")
       ? hostTheme.bg_image || hostTheme.preview_url
       : null;
   const hostPrimary = hostBg ? hostTheme?.primary_color : null;
   const hostAccent = hostBg ? hostTheme?.accent_color : null;
 
   const roomStyle: React.CSSProperties = {
-    background: "linear-gradient(180deg, #0f041e 0%, #050505 100%)",
+    background:"linear-gradient(180deg, #0f041e 0%, #050505 100%)",
     ...(hostPrimary ? { ["--primary" as string]: hostPrimary } : {}),
     ...(hostAccent ? { ["--secondary" as string]: hostAccent } : {}),
   };
@@ -2154,7 +2138,7 @@ function RoomPage() {
     const hostMember = members.find(m => m.user_id === r.host_id);
     const hostParticipant: RoomParticipant = {
       id: r.host_id,
-      username: r.host?.username ?? "Host",
+      username: r.host?.username ??"Host",
       avatar: r.host?.avatar ?? null,
       avatar_frame_url: cpSeatFrames[r.host_id] ?? r.host?.frame ?? null,
       country: r.host?.country ?? null,
@@ -2181,7 +2165,7 @@ function RoomPage() {
         is_requested: false,
         user: m ? {
           id: m.user_id,
-          username: m.user?.username ?? "User",
+          username: m.user?.username ??"User",
           avatar: m.user?.avatar ?? null,
           avatar_frame_url: cpSeatFrames[m.user_id] ?? m.user?.frame ?? null,
           country: m.user?.country ?? null,
@@ -2222,11 +2206,11 @@ style={roomStyle}
     {cpMicPairUserIds?.map((partnerId, index) => {
       const partner = members.find((member) => member.user_id === partnerId);
       const avatar = partner?.user?.avatar;
-      const name = partner?.user?.username ?? "CP Partner";
+      const name = partner?.user?.username ??"CP Partner";
       return (
         <div
           key={partnerId}
-          className={`absolute bottom-[22%] z-[101] h-14 w-14 overflow-hidden rounded-full border-[3px] border-pink-200 bg-black/80 shadow-[0_0_22px_rgba(255,105,180,0.9)] ring-2 ring-fuchsia-400/70 ${index === 0 ? "left-[calc(50%-68px)]" : "left-[calc(50%+12px)]"}`}
+          className={`absolute bottom-[22%] z-[101] h-14 w-14 overflow-hidden rounded-full border-[3px] border-pink-200 bg-black/80 shadow-[0_0_22px_rgba(255,105,180,0.9)] ring-2 ring-fuchsia-400/70 ${index === 0 ?"left-[calc(50%-68px)]" :"left-[calc(50%+12px)]"}`}
           aria-label={name}
           title={name}
         >
@@ -2272,7 +2256,7 @@ onToggleMic={() => void toggleMuteWithSync()} onOpenMusic={() => { if (!isHost &
 onToggleSpeaker={agora.toggleSpeaker}
 onSeatTap={(idx) => void onSeatTap(idx)}
 onJoinSeat={(idx) => void takeSeat(idx)}
-onHostTap={() => setMiniProfileUser({ id: r.host_id, username: r.host?.username ?? "Host", avatar: r.host?.avatar ?? null })}
+onHostTap={() => setMiniProfileUser({ id: r.host_id, username: r.host?.username ??"Host", avatar: r.host?.avatar ?? null })}
 onReport={async () => {
   const reason = window.prompt("Report this room?");
   if (reason && reason.trim().length >= 3) {
@@ -2288,8 +2272,8 @@ onReport={async () => {
 }}
 onShare={share}
 onExit={leaveRoom}
-onHome={() => void navigate({ to: "/", replace: true })}
-onRanking={() => void navigate({ to: "/rank" })}
+onHome={() => void navigate({ to:"/", replace: true })}
+onRanking={() => void navigate({ to:"/rank" })}
 onOpenGames={() => setGamesSheetOpen(true)}
 />
 <HostMusicPlayer open={musicOpen} onClose={() => setMusicOpen(false)} controller={{ musicPlaying: agora.musicPlaying, musicTitle: agora.musicTitle, playMusicFile: agora.playMusicFile, pauseMusic: agora.pauseMusic, resumeMusic: agora.resumeMusic, stopMusic: agora.stopMusic, setMusicVolume: agora.setMusicVolume }} />
@@ -2299,13 +2283,13 @@ onOpenGames={() => setGamesSheetOpen(true)}
 </div>
 
 <HostRoomMoreSheet open={hostMoreOpen} onClose={() => setHostMoreOpen(false)} seatCount={r.seat_count} maxSeats={20} onSeats={async (next) => { if (!isHost) return; const occupied=members.filter((m)=>m.seat_index!=null).length; if(next<occupied){toast.error(`Cannot reduce seats below ${occupied} occupied seats`);return;} const {error}=await supabase.rpc("update_voice_room_seat_count",{_room_id:roomId,_seat_count:next}); if(error){toast.error(error.message);return;} setHostMoreOpen(false); await room.refetch(); }} onMusic={() => {setHostMoreOpen(false);setMusicOpen(true)}} onSettings={() => {setHostMoreOpen(false);setVideoSettingsOpen(true)}} onInvite={() => {setHostMoreOpen(false);setInviteOpen(true)}} onRanking={() => {setHostMoreOpen(false);void navigate({to:"/rank"})}} />
-<InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} roomUrl={typeof window === "undefined" ? "" : window.location.href} roomTitle={(r as { name?: string | null }).name ?? "JALWA Voice Room"} />
+<InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} roomUrl={typeof window ==="undefined" ?"" : window.location.href} roomTitle={(r as { name?: string | null }).name ??"JALWA Voice Room"} />
 
 <JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />
 
 {chatComposerOpen && (
 <div
-className="fixed inset-0 z-[2147483000] flex flex-col justify-end bg-black/60 backdrop-blur-sm"
+className="fixed inset-0 z-[2147483000] flex flex-col justify-end bg-black/60"
 onClick={() => setChatComposerOpen(false)}
 >
 <div
@@ -2328,7 +2312,7 @@ className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white/7
 <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-3 py-3 scrollbar-hide">
 {messages.length === 0 && <EmptyChat />}
 {messages
-.filter((m) => m.kind !== "emoji")
+.filter((m) => m.kind !=="emoji")
 .slice(-100)
 .map((m) => (
 <ChatLine
@@ -2345,8 +2329,8 @@ onRetry={(msg) => void send(msg)}
 
 {/* Composer */}
 <div
-className="shrink-0 border-t border-white/10 bg-gradient-to-t from-black via-black/95 to-transparent px-4 pb-4 pt-3 backdrop-blur-md"
-style={{ paddingBottom: `calc(${keyboardOffset}px + 12px)` }}
+className="shrink-0 border-t border-white/10 bg-gradient-to-t from-black via-black/95 to-transparent px-4 pb-4 pt-3"
+style={{ paddingBottom:`calc(${keyboardOffset}px + 12px)` }}
 >
 <ReplyBar reply={replyTo} onCancel={() => setReplyTo(null)} />
 <div className="flex h-11 min-h-11 max-h-11 items-center gap-2">
@@ -2359,7 +2343,7 @@ onChange={(e) => setText(e.target.value)}
 rows={1}
 className="h-11 min-h-11 max-h-11 w-full resize-none overflow-y-auto rounded-2xl border border-white/10 bg-white/5 p-3 pr-10 text-sm leading-5 text-white focus:outline-none focus:ring-1 focus:ring-fuchsia-500/50"
 onKeyDown={(e) => {
-if (e.key === "Enter" && !e.shiftKey) {
+if (e.key ==="Enter" && !e.shiftKey) {
 e.preventDefault();
 void send();
 }
@@ -2388,7 +2372,7 @@ className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-t
 open={chatEmojiSheetOpen}
 onClose={() => setChatEmojiSheetOpen(false)}
 onPick={(emoji: ChatEmoji) => {
-  setText((previous) => `${previous}${previous ? " " : ""}${emoji.emoji}`);
+  setText((previous) =>`${previous}${previous ?"" :""}${emoji.emoji}`);
 }}
 />
 <MiniProfileSheet
@@ -2421,8 +2405,8 @@ function MessageBody({ body, myName }: { body: string; myName?: string | null })
             key={i}
             className={
               isMe
-                ? "rounded bg-[color:var(--gold)]/25 px-1 font-bold text-[color:var(--gold)]"
-                : "font-semibold text-[color:var(--secondary)]"
+                ?"rounded bg-[color:var(--gold)]/25 px-1 font-bold text-[color:var(--gold)]"
+                :"font-semibold text-[color:var(--secondary)]"
             }
           >
             {part}
@@ -2446,28 +2430,28 @@ const ChatLine = React.memo(function ChatLine({
   onReply?: (m: Message) => void;
   onRetry?: (m: Message) => void;
 }) {
-  const body = m.text ?? m.message ?? "";
-  if (m.kind === "gift") {
+  const body = m.text ?? m.message ??"";
+  if (m.kind ==="gift") {
     return (
       <div className="inline-flex max-w-[95%] items-center gap-1.5 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/20 to-[color:var(--destructive)]/10 px-2.5 py-1 text-[11px] font-bold text-[color:var(--gold)]">
-        🎁 <span className="text-white/80">{m.user?.username ?? "user"}</span> sent{" "}
+        🎁 <span className="text-white/80">{m.user?.username ??"user"}</span> sent{""}
         {body}
       </div>
     );
   }
-  if (m.kind === "system" || m.kind === "join" || m.kind === "leave") {
+  if (m.kind ==="system" || m.kind ==="join" || m.kind ==="leave") {
     return (
       <div className="text-[10.5px] leading-snug text-white/60">
         <span className="mr-1 rounded bg-white/10 px-1 py-0.5 text-[9px] font-black uppercase text-white/70">
           {m.kind}
         </span>
-        {body || (m.kind === "join" ? "joined the room" : "left the room")}
+        {body || (m.kind ==="join" ?"joined the room" :"left the room")}
       </div>
     );
   }
-  const initial = (m.user?.username ?? "U").charAt(0).toUpperCase();
+  const initial = (m.user?.username ??"U").charAt(0).toUpperCase();
   const mentionsMe =
-    !!myName && (m.mentions ?? []).some((n) => typeof n === 'string' && n.toLowerCase() === myName.toLowerCase());
+    !!myName && (m.mentions ?? []).some((n) => typeof n ==='string' && n.toLowerCase() === myName.toLowerCase());
   return (
     <div className="flex max-w-full items-start gap-1.5">
       {m.user?.avatar ? (
@@ -2483,27 +2467,27 @@ const ChatLine = React.memo(function ChatLine({
       )}
       <div
         onDoubleClick={() => onReply?.(m)}
-        className={`rounded-xl border px-2 py-1 backdrop-blur-sm ${
+        className={`rounded-xl border px-2 py-1  ${
           m.failed
-            ? "border-red-500/60 bg-red-950/40"
+            ?"border-red-500/60 bg-red-950/40"
             : mentionsMe
-              ? "border-[color:var(--gold)]/60 bg-[color:var(--gold)]/10"
+              ?"border-[color:var(--gold)]/60 bg-[color:var(--gold)]/10"
               : isMe
-                ? "border-[color:var(--primary)]/50 bg-gradient-to-br from-[color:var(--primary)]/25 to-[color:var(--secondary)]/20"
-                : "border-white/10 bg-black/50"
-        } ${m.pending ? "opacity-60" : ""}`}
+                ?"border-[color:var(--primary)]/50 bg-gradient-to-br from-[color:var(--primary)]/25 to-[color:var(--secondary)]/20"
+                :"border-white/10 bg-black/50"
+        } ${m.pending ?"opacity-60" :""}`}
       >
         {m.reply_to_id && (
           <div className="mb-0.5 truncate rounded-md border-l-2 border-[color:var(--secondary)] bg-white/5 px-1.5 py-0.5 text-[9.5px] text-white/60">
             <span className="font-bold text-[color:var(--secondary)]">
-              @{m.reply_to_username ?? "user"}
-            </span>{" "}
+              @{m.reply_to_username ??"user"}
+            </span>{""}
             {m.reply_to_text}
           </div>
         )}
         <span className="mr-1 inline-flex items-center gap-1 text-[10px] font-bold text-[color:var(--gold)]">
           <VipBadge level={m.user?.level ?? 0} size="xs" />
-          {m.user?.username ?? "user"}:
+          {m.user?.username ??"user"}:
         </span>
         <span className="break-words text-[11.5px] leading-snug text-white/95">
           <MessageBody body={body} myName={myName} />
@@ -2536,15 +2520,15 @@ const ChatLine = React.memo(function ChatLine({
 });
 
 
-/** Small "replying to …" strip shown above a composer. */
+/** Small"replying to …" strip shown above a composer. */
 function ReplyBar({ reply, onCancel }: { reply: Message | null; onCancel: () => void }) {
   if (!reply) return null;
-  const body = reply.text ?? reply.message ?? "";
+  const body = reply.text ?? reply.message ??"";
   return (
     <div className="mb-2 flex items-center gap-2 rounded-xl border-l-2 border-[color:var(--secondary)] bg-white/5 px-2 py-1.5">
       <div className="min-w-0 flex-1">
         <p className="text-[10px] font-bold text-[color:var(--secondary)]">
-          Replying to @{reply.user?.username ?? reply.sender_username ?? "user"}
+          Replying to @{reply.user?.username ?? reply.sender_username ??"user"}
         </p>
         <p className="truncate text-[10.5px] text-white/60">{body}</p>
       </div>
@@ -2606,18 +2590,18 @@ function FollowLoveChip({
         onLove();
       }}
       aria-label="Send daily love (100 coins)"
-      title={cooling ? "Come back tomorrow" : "Daily love · 100 coins"}
+      title={cooling ?"Come back tomorrow" :"Daily love · 100 coins"}
       className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition active:scale-90 ${
         blink
-          ? "animate-pulse border-rose-400 bg-rose-500/30 text-rose-300 shadow-[0_0_14px_-2px_rgba(244,63,94,0.9)]"
+          ?"animate-pulse border-rose-400 bg-rose-500/30 text-rose-300 shadow-[0_0_14px_-2px_rgba(244,63,94,0.9)]"
           : cooling
-            ? "border-white/15 bg-black/60 text-white/40"
-            : "border-white/20 bg-black/70 text-white hover:bg-black/90"
+            ?"border-white/15 bg-black/60 text-white/40"
+            :"border-white/20 bg-black/70 text-white hover:bg-black/90"
       }`}
     >
       <Heart
         className="h-3.5 w-3.5"
-        fill={blink ? "currentColor" : cooling ? "rgba(255,255,255,0.35)" : "#111"}
+        fill={blink ?"currentColor" : cooling ?"rgba(255,255,255,0.35)" :"#111"}
         strokeWidth={2}
       />
     </button>
@@ -2640,7 +2624,7 @@ function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
   }, [latestEnter?.id]);
 
   if (!shown?.user) return null;
-  const name = shown.user.username ?? "guest";
+  const name = shown.user.username ??"guest";
   const level = shown.user.level ?? 1;
   const avatar = shown.user.avatar;
   const tier = vipTierForLevel(level);
@@ -2649,35 +2633,34 @@ function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
     <div
       key={shown.id}
       className={`pointer-events-auto transition-all duration-500 ease-out ${
-        visible ? "translate-x-0 opacity-100" : "-translate-x-6 opacity-0"
+        visible ?"translate-x-0 opacity-100" :"-translate-x-6 opacity-0"
       }`}
     >
       <div
-        className="relative flex items-center gap-2 overflow-hidden rounded-full py-1.5 pl-1.5 pr-2 backdrop-blur-md"
+        className="relative flex items-center gap-2 overflow-hidden rounded-full py-1.5 pl-1.5 pr-2"
         style={{
-          background: `linear-gradient(90deg, ${tier.color}55 0%, #0a0114cc 55%, ${tier.color}33 100%)`,
-          border: `1.5px solid ${tier.color}cc`,
-          boxShadow: `0 0 24px -4px ${tier.color}, inset 0 0 20px ${tier.color}22`,
+          background:`linear-gradient(90deg, ${tier.color}55 0%, #0a0114cc 55%, ${tier.color}33 100%)`,
+          border:`1.5px solid ${tier.color}cc`,
+          boxShadow:`0 0 24px -4px ${tier.color}, inset 0 0 20px ${tier.color}22`,
         }}
       >
         {/* shimmer sweep */}
         <span
           className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 -skew-x-12 animate-[shimmer_2s_linear_infinite]"
           style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)",
+            background:"linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)",
           }}
         />
 
         {/* Avatar with tier ring */}
         <div
           className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full"
-          style={{ boxShadow: `0 0 10px ${tier.color}` }}
+          style={{ boxShadow:`0 0 10px ${tier.color}` }}
         >
           <div
             className="absolute inset-0 rounded-full"
             style={{
-              background: `conic-gradient(from 0deg, ${tier.color}, #fff, ${tier.color})`,
+              background:`conic-gradient(from 0deg, ${tier.color}, #fff, ${tier.color})`,
             }}
           />
           <div className="absolute inset-[2px] overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/60 to-[color:var(--secondary)]/60">
@@ -2696,7 +2679,7 @@ function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
           <div className="truncate text-[12.5px] font-black text-white">
             <span
               className="uppercase tracking-wide"
-              style={{ textShadow: `0 0 8px ${tier.color}` }}
+              style={{ textShadow:`0 0 8px ${tier.color}` }}
             >
               {name}
             </span>
@@ -2713,7 +2696,7 @@ function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
           </span>
           <span
             className="text-[10px] font-black uppercase tracking-widest"
-            style={{ color: tier.color, textShadow: `0 0 6px ${tier.color}` }}
+            style={{ color: tier.color, textShadow:`0 0 6px ${tier.color}` }}
           >
             {tier.label}
           </span>
@@ -2744,7 +2727,7 @@ function BottomRoomTab({
     <button
       onClick={onClick}
       className={`flex flex-col items-center justify-center gap-1 text-[12px] font-medium ${
-        active ? "text-[color:var(--secondary)]" : "text-white/85"
+        active ?"text-[color:var(--secondary)]" :"text-white/85"
       }`}
     >
       {icon}
@@ -2768,8 +2751,8 @@ function HeaderIcon({
     <button
       onClick={onClick}
       aria-label={label}
-      className={`grid h-9 w-9 place-items-center rounded-full border border-white/10 backdrop-blur-md ${
-        danger ? "bg-[color:var(--destructive)]/90 text-white" : "bg-white/5 text-white/85"
+      className={`grid h-9 w-9 place-items-center rounded-full border border-white/10  ${
+        danger ?"bg-[color:var(--destructive)]/90 text-white" :"bg-white/5 text-white/85"
       }`}
     >
       {children}
@@ -2792,10 +2775,10 @@ function DockIcon({
     <button
       onClick={onClick}
       aria-label={label}
-      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 backdrop-blur-md ${
+      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10  ${
         glow
-          ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--destructive)] to-[color:var(--primary)] text-white shadow-lg shadow-[color:var(--destructive)]/30"
-          : "bg-white/10 text-white/85"
+          ?"bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--destructive)] to-[color:var(--primary)] text-white shadow-lg shadow-[color:var(--destructive)]/30"
+          :"bg-white/10 text-white/85"
       }`}
     >
       {children}
@@ -2805,7 +2788,7 @@ function DockIcon({
 
 /* ─── Voice seat with No.X label + heart counter ─────────────── */
 function SofaIcon({ color, className }: { color: string; className?: string }) {
-  // Cartoon armchair / sofa. `color` sets the upholstery. Legs stay wood-brown.
+  // Cartoon armchair / sofa.`color` sets the upholstery. Legs stay wood-brown.
   const dark = color; // base tone
   return (
     <svg viewBox="0 0 64 64" className={className} aria-hidden>
@@ -2832,13 +2815,13 @@ function SofaIcon({ color, className }: { color: string; className?: string }) {
   );
 }
 
-function KingThroneIcon({ className, variant = "red" }: { className?: string; variant?: "red" | "blue" }) {
+function KingThroneIcon({ className, variant ="red" }: { className?: string; variant?:"red" |"blue" }) {
   // Royal Gold Throne — tall ornate back with velvet upholstery + lion-arm accents.
   // variant controls the velvet color: red for host, blue for guests.
-  const uid = variant === "red" ? "r" : "b";
-  const velvetTop = variant === "red" ? "#c8203a" : "#1e5fd6";
-  const velvetBottom = variant === "red" ? "#5c0a18" : "#0b2a66";
-  const stitchColor = variant === "red" ? "#8B0000" : "#0a1a4a";
+  const uid = variant ==="red" ?"r" :"b";
+  const velvetTop = variant ==="red" ?"#c8203a" :"#1e5fd6";
+  const velvetBottom = variant ==="red" ?"#5c0a18" :"#0b2a66";
+  const stitchColor = variant ==="red" ?"#8B0000" :"#0a1a4a";
   return (
     <svg viewBox="0 0 64 72" className={className} aria-hidden>
       <defs>
@@ -2852,7 +2835,7 @@ function KingThroneIcon({ className, variant = "red" }: { className?: string; va
           <stop offset="100%" stopColor={velvetBottom} />
         </linearGradient>
         <radialGradient id={`throne-glow-${uid}`} cx="50%" cy="100%" r="60%">
-          <stop offset="0%" stopColor={variant === "red" ? "#4A0E4E" : "#0a1a55"} stopOpacity="0.7" />
+          <stop offset="0%" stopColor={variant ==="red" ?"#4A0E4E" :"#0a1a55"} stopOpacity="0.7" />
           <stop offset="100%" stopColor="#000" stopOpacity="0" />
         </radialGradient>
       </defs>
@@ -2919,13 +2902,13 @@ function SeatsSheet({
     <>
       <div
         data-jalwa-overlay="true"
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-black/50"
         onClick={onClose}
       />
       <div
         data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+        style={{ paddingBottom:"calc(env(safe-area-inset-bottom) + 20px)" }}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
         <div className="flex items-center gap-2">
@@ -2965,8 +2948,8 @@ function SeatsSheet({
                 onClick={() => setN(p)}
                 className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${
                   active
-                    ? "bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--primary)] text-primary-foreground"
-                    : "border border-border bg-background/60 text-foreground/80"
+                    ?"bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--primary)] text-primary-foreground"
+                    :"border border-border bg-background/60 text-foreground/80"
                 }`}
               >
                 {p} seats
@@ -2986,7 +2969,7 @@ function SeatsSheet({
 }
 
 /* ─── Premium video room settings sheet ───────────────────────── */
-type VideoFxKey = "beauty" | "mirror" | "hd" | "blur";
+type VideoFxKey ="beauty" |"mirror" |"hd" |"blur";
 
 function VideoSettingsSheet({
   open,
@@ -3049,7 +3032,7 @@ function VideoSettingsSheet({
       <div
         data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-white/10 bg-[#1a0b2e] p-5 text-white shadow-2xl"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)", backgroundImage: "linear-gradient(to bottom, #1a0b2e, #2d0b4d, #0a0114)" }}
+        style={{ paddingBottom:"calc(env(safe-area-inset-bottom) + 20px)", backgroundImage:"linear-gradient(to bottom, #1a0b2e, #2d0b4d, #0a0114)" }}
       >
 
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/25" />
@@ -3083,7 +3066,7 @@ function VideoSettingsSheet({
               />
               <FxToggle
                 icon={<Video className="h-4 w-4" />}
-                label={fx.hd ? "HD" : "SD"}
+                label={fx.hd ?"HD" :"SD"}
                 active={fx.hd}
                 onClick={() => onFxChange("hd", !fx.hd)}
               />
@@ -3101,35 +3084,35 @@ function VideoSettingsSheet({
             onClick={onToggleMute}
             className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
               muted
-                ? "border-white/15 bg-white/5 text-white/80"
-                : "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
+                ?"border-white/15 bg-white/5 text-white/80"
+                :"border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
             }`}
           >
             {muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            {muted ? "Mic Off" : "Mic On"}
+            {muted ?"Mic Off" :"Mic On"}
           </button>
           <button
             onClick={onToggleSpeaker}
             className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
               speakerMuted
-                ? "border-white/15 bg-white/5 text-white/80"
-                : "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
+                ?"border-white/15 bg-white/5 text-white/80"
+                :"border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
             }`}
           >
             {speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            {speakerMuted ? "Speaker Off" : "Speaker On"}
+            {speakerMuted ?"Speaker Off" :"Speaker On"}
           </button>
           {isVideo && isHost && (
             <button
               onClick={onToggleVideo}
               className={`col-span-2 flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
                 videoOn
-                  ? "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
-                  : "border-white/15 bg-white/5 text-white/80"
+                  ?"border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
+                  :"border-white/15 bg-white/5 text-white/80"
               }`}
             >
               {videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
-              {videoOn ? "Camera On" : "Camera Off"}
+              {videoOn ?"Camera On" :"Camera Off"}
             </button>
           )}
         </div>
@@ -3183,8 +3166,8 @@ function FxToggle({
       onClick={onClick}
       className={`flex flex-col items-center justify-center gap-1 rounded-2xl border py-3 transition ${
         active
-          ? "border-[color:var(--gold)]/60 bg-gradient-to-br from-[color:var(--gold)]/25 to-[color:var(--primary)]/15 text-white shadow-[0_0_18px_-4px_color-mix(in_oklab,var(--gold)_50%,transparent)]"
-          : "border-white/12 bg-white/5 text-white/70"
+          ?"border-[color:var(--gold)]/60 bg-gradient-to-br from-[color:var(--gold)]/25 to-[color:var(--primary)]/15 text-white shadow-[0_0_18px_-4px_color-mix(in_oklab,var(--gold)_50%,transparent)]"
+          :"border-white/12 bg-white/5 text-white/70"
       }`}
     >
       {icon}
@@ -3245,15 +3228,15 @@ function SeatActionSheet({
 
 
   if (!member) return null;
-  const name = member.user?.username ?? "User";
+  const name = member.user?.username ??"User";
   const avatar = member.user?.avatar ?? null;
   return (
     <>
-      <div data-jalwa-overlay="true" className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div data-jalwa-overlay="true" className="fixed inset-0 z-50 bg-black/60" onClick={onClose} />
       <div
         data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+        style={{ paddingBottom:"calc(env(safe-area-inset-bottom) + 20px)" }}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
         <div className="flex items-center gap-3">
@@ -3261,14 +3244,14 @@ function SeatActionSheet({
             <img src={avatar} alt="" className="h-12 w-12 rounded-full object-cover" />
           ) : (
             <div className="grid h-12 w-12 place-items-center rounded-full bg-white/10 text-lg font-bold">
-              {name[0]?.toUpperCase() ?? "?"}
+              {name[0]?.toUpperCase() ??"?"}
             </div>
           )}
           <div className="min-w-0 flex-1">
             <div className="truncate text-base font-extrabold">{name}</div>
             <div className="text-[11px] text-muted-foreground">
-              {member.is_moderator ? "Moderator" : "On seat"}
-              {isSeatLocked ? " · 🔒 locked" : ""}
+              {member.is_moderator ?"Moderator" :"On seat"}
+              {isSeatLocked ?" · 🔒 locked" :""}
             </div>
           </div>
         </div>
@@ -3287,7 +3270,7 @@ function SeatActionSheet({
               onClick={onToggleModerator}
               className="w-full rounded-2xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/15 py-3 text-sm font-bold text-white"
             >
-              {member.is_moderator ? "Remove as Moderator" : "Make Moderator"}
+              {member.is_moderator ?"Remove as Moderator" :"Make Moderator"}
             </button>
           )}
           {canLock && (
@@ -3295,7 +3278,7 @@ function SeatActionSheet({
               onClick={onToggleLock}
               className="w-full rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 py-3 text-sm font-bold text-[color:var(--gold)]"
             >
-              {isSeatLocked ? "🔓 Unlock Seat" : "🔒 Lock Seat"}
+              {isSeatLocked ?"🔓 Unlock Seat" :"🔒 Lock Seat"}
             </button>
           )}
           {canModerate && (
@@ -3346,15 +3329,15 @@ function EmptySeatSheet({
   if (seatIndex == null) return null;
   return (
     <>
-      <div data-jalwa-overlay="true" className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div data-jalwa-overlay="true" className="fixed inset-0 z-50 bg-black/60" onClick={onClose} />
       <div
         data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+        style={{ paddingBottom:"calc(env(safe-area-inset-bottom) + 20px)" }}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
         <div className="text-center text-sm font-black">
-          Seat {seatIndex + 1} {isLocked ? "· 🔒 Locked" : ""}
+          Seat {seatIndex + 1} {isLocked ?"· 🔒 Locked" :""}
         </div>
         <div className="mt-5 flex flex-col gap-2">
           <button
@@ -3373,7 +3356,7 @@ function EmptySeatSheet({
             onClick={onToggleLock}
             className="w-full rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 py-3 text-sm font-bold text-[color:var(--gold)]"
           >
-            {isLocked ? "🔓 Unlock Seat" : "🔒 Lock Seat"}
+            {isLocked ?"🔓 Unlock Seat" :"🔒 Lock Seat"}
           </button>
           <button
             onClick={onClose}
@@ -3413,7 +3396,7 @@ function ViewersSheet({
       from_user: userId!,
       to_user: toUser,
       seat_index: null,
-      status: "pending",
+      status:"pending",
     });
     if (error) toast.error(error.message);
     else toast.success("Invite sent");
@@ -3421,11 +3404,11 @@ function ViewersSheet({
 
   return (
     <>
-      <div data-jalwa-overlay="true" className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div data-jalwa-overlay="true" className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
       <div
         data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 flex max-h-[75vh] w-full max-w-[480px] -translate-x-1/2 flex-col rounded-t-3xl border-t border-violet-300/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] p-4 text-white shadow-2xl"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+        style={{ paddingBottom:"calc(env(safe-area-inset-bottom) + 16px)" }}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
         <div className="mb-2 flex items-center justify-between">
@@ -3476,7 +3459,7 @@ function ViewerRow({
   showInvite: boolean;
   onInvite: () => void;
 }) {
-  const name = member.user?.username ?? "guest";
+  const name = member.user?.username ??"guest";
   const avatar = member.user?.avatar ?? null;
   const initial = name.slice(0, 1).toUpperCase();
   return (
@@ -3491,7 +3474,7 @@ function ViewerRow({
       <div className="min-w-0 flex-1">
         <div className="truncate text-[13px] font-bold text-white">{name}</div>
         <div className="text-[10px] text-white/50">
-          {member.is_moderator ? "Moderator" : member.seat_index != null ? `Seat ${member.seat_index + 1}` : "Viewer"}
+          {member.is_moderator ?"Moderator" : member.seat_index != null ?`Seat ${member.seat_index + 1}` :"Viewer"}
         </div>
       </div>
       {showInvite && (
@@ -3516,10 +3499,10 @@ function SeatInvitePopup({
   onAccept: () => void;
   onDecline: () => void;
 }) {
-  const name = invite.from_name ?? "Host";
+  const name = invite.from_name ??"Host";
   const initial = name.slice(0, 1).toUpperCase();
   return (
-    <div data-jalwa-overlay="true" className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
+    <div data-jalwa-overlay="true" className="fixed inset-0 z-[70] grid place-items-center bg-black/70  p-4">
       <div data-jalwa-overlay-content="true" className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
         <div className="flex flex-col items-center gap-3 text-center">
           {invite.from_avatar ? (
@@ -3544,7 +3527,7 @@ function SeatInvitePopup({
                 <span className="text-[color:var(--gold)]">{name}</span> ne aap ko seat pe bulaya hai
               </p>
               <p className="text-[11px] text-white/60">
-                {invite.seat_index != null ? `Seat ${invite.seat_index + 1}` : "First available seat"}
+                {invite.seat_index != null ?`Seat ${invite.seat_index + 1}` :"First available seat"}
               </p>
             </>
           )}
@@ -3581,10 +3564,10 @@ function SeatRequestPopup({
   onAccept: () => void;
   onReject: () => void;
 }) {
-  const name = request.from_name ?? "Viewer";
+  const name = request.from_name ??"Viewer";
   const initial = name.slice(0, 1).toUpperCase();
   return (
-    <div data-jalwa-overlay="true" className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
+    <div data-jalwa-overlay="true" className="fixed inset-0 z-[70] grid place-items-center bg-black/70  p-4">
       <div data-jalwa-overlay-content="true" className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
         {queueCount > 1 && (
           <div className="mb-2 flex justify-center">
@@ -3605,7 +3588,7 @@ function SeatRequestPopup({
             <span className="text-[color:var(--gold)]">{name}</span> seat pe aana chahta hai
           </p>
           <p className="text-[11px] text-white/60">
-            {request.seat_index != null ? `Seat ${request.seat_index + 1}` : "First available seat"}
+            {request.seat_index != null ?`Seat ${request.seat_index + 1}` :"First available seat"}
           </p>
         </div>
 
@@ -3663,7 +3646,7 @@ function EmojiReactionSheet({
 }) {
   const [seat, setSeat] = useState(defaultSeat);
   const [emojis, setEmojis] = useState<ReactionEmoji[]>([]);
-  const [tierFilter, setTierFilter] = useState<"normal" | "vip">("normal");
+  const [tierFilter, setTierFilter] = useState<"normal" |"vip">("normal");
   useEffect(() => {
     if (open) setSeat(defaultSeat);
   }, [open, defaultSeat]);
@@ -3678,14 +3661,14 @@ function EmojiReactionSheet({
   }, [open, emojis.length]);
 
   useEffect(() => {
-    if (open && !isHost && userVipLevel <= 0 && tierFilter === "vip") {
+    if (open && !isHost && userVipLevel <= 0 && tierFilter ==="vip") {
       setTierFilter("normal");
     }
   }, [open, isHost, userVipLevel, tierFilter]);
 
   const isUnlocked = (e: ReactionEmoji) => {
-    const tier = e.tier ?? "normal";
-    if (tier === "normal") return true;
+    const tier = e.tier ??"normal";
+    if (tier ==="normal") return true;
     // Any non-normal tier requires VIP membership
     return userVipLevel >= (e.min_vip_level ?? 1);
   };
@@ -3694,26 +3677,26 @@ function EmojiReactionSheet({
 
   // Hide VIP emojis entirely for non-VIP users
   const accessible = emojis.filter((e) => {
-    const tier = e.tier ?? "normal";
-    if (tier === "normal") return true;
+    const tier = e.tier ??"normal";
+    if (tier ==="normal") return true;
     return isVip;
   });
 
   const visible = accessible.filter((e) => {
-    const tier = e.tier ?? "normal";
-    if (tierFilter === "normal") return tier === "normal";
-    return tier !== "normal";
+    const tier = e.tier ??"normal";
+    if (tierFilter ==="normal") return tier ==="normal";
+    return tier !=="normal";
   });
 
 
   if (!open) return null;
   return (
     <>
-      <div data-jalwa-overlay="true" className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div data-jalwa-overlay="true" className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
       <div
         data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-violet-300/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] p-4 text-white shadow-2xl"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+        style={{ paddingBottom:"calc(env(safe-area-inset-bottom) + 16px)" }}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
         <div className="mb-2 flex items-center justify-between">
@@ -3740,8 +3723,8 @@ function EmojiReactionSheet({
                   aria-label={`Seat ${i + 1}`}
                   className={`shrink-0 rounded-full p-[2px] transition ${
                     active
-                      ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
-                      : "bg-white/10"
+                      ?"bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+                      :"bg-white/10"
                   }`}
                 >
                   <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-black/40">
@@ -3763,17 +3746,17 @@ function EmojiReactionSheet({
             Tap an animated emoji
           </div>
           <div className="flex gap-1">
-            {(isVip ? (["normal", "vip"] as const) : (["normal"] as const)).map((t) => (
+            {(isVip ? (["normal","vip"] as const) : (["normal"] as const)).map((t) => (
               <button
                 key={t}
                 onClick={() => setTierFilter(t)}
                 className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase transition ${
                   tierFilter === t
-                    ? "bg-gradient-to-r from-amber-400 to-fuchsia-500 text-black"
-                    : "bg-white/10 text-white/60 hover:bg-white/20"
+                    ?"bg-gradient-to-r from-amber-400 to-fuchsia-500 text-black"
+                    :"bg-white/10 text-white/60 hover:bg-white/20"
                 }`}
               >
-                {t === "vip" ? "👑 VIP" : "Normal"}
+                {t ==="vip" ?"👑 VIP" :"Normal"}
               </button>
             ))}
           </div>
@@ -3787,11 +3770,11 @@ function EmojiReactionSheet({
                 key={e.slug}
                 onClick={() => {
                   if (!unlocked) {
-                    const tier = e.tier ?? "normal";
+                    const tier = e.tier ??"normal";
                     toast.info(
-                      tier === "host_only"
-                        ? "Host-only emoji"
-                        : "👑 VIP only — buy VIP pass to unlock"
+                      tier ==="host_only"
+                        ?"Host-only emoji"
+                        :"👑 VIP only — buy VIP pass to unlock"
                     );
                     return;
                   }
@@ -3799,7 +3782,7 @@ function EmojiReactionSheet({
                   setTimeout(() => onSend(e.emoji, seat, e.clip_path), 0);
                 }}
                 className={`relative grid aspect-square place-items-center rounded-xl border border-white/10 p-1 transition active:scale-90 ${
-                  unlocked ? "bg-white/5 hover:bg-white/15" : "bg-black/30 opacity-70"
+                  unlocked ?"bg-white/5 hover:bg-white/15" :"bg-black/30 opacity-70"
                 }`}
                 title={e.name}
               >
@@ -3807,7 +3790,7 @@ function EmojiReactionSheet({
                   src={e.clip_path}
                   alt={e.name}
                   loading="lazy"
-                  className={`h-full w-full object-contain ${unlocked ? "" : "grayscale"}`}
+                  className={`h-full w-full object-contain ${unlocked ?"" :"grayscale"}`}
                 />
                 {!unlocked && (
                   <span className="absolute right-0.5 top-0.5 rounded-full bg-amber-500/90 px-1 text-[8px] font-black text-black">
@@ -3878,12 +3861,12 @@ function FlyingEmoji({
   const style: React.CSSProperties = {
     left: 0,
     top: 0,
-    willChange: "transform, opacity",
-    animation: "flyEmoji 2.6s cubic-bezier(0.22,1,0.36,1) forwards",
-    ["--fx" as never]: `${pos.x - size / 2}px`,
-    ["--fy" as never]: `${pos.y - size / 2}px`,
-    ["--tx" as never]: `${target.x - size / 2}px`,
-    ["--ty" as never]: `${target.y - size / 2}px`,
+    willChange:"transform, opacity",
+    animation:"flyEmoji 2.6s cubic-bezier(0.22,1,0.36,1) forwards",
+    ["--fx" as never]:`${pos.x - size / 2}px`,
+    ["--fy" as never]:`${pos.y - size / 2}px`,
+    ["--tx" as never]:`${target.x - size / 2}px`,
+    ["--ty" as never]:`${target.y - size / 2}px`,
   };
   if (clip) {
     return (
@@ -3981,18 +3964,18 @@ function GifterListSheet({
   const totalPts = rows.reduce((s, r) => s + r.total_coins, 0);
   return (
     <>
-      <div data-jalwa-overlay="true" className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div data-jalwa-overlay="true" className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
       <div
         data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl max-h-[75vh] overflow-y-auto"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+        style={{ paddingBottom:"calc(env(safe-area-inset-bottom) + 20px)" }}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-extrabold">Gifters for {receiver.name}</h2>
             <p className="text-xs text-muted-foreground">
-              {rows.length} gifter{rows.length === 1 ? "" : "s"} · {totalPts.toLocaleString()} pts
+              {rows.length} gifter{rows.length === 1 ?"" :"s"} · {totalPts.toLocaleString()} pts
             </p>
           </div>
           <button
@@ -4009,13 +3992,13 @@ function GifterListSheet({
             <p className="py-8 text-center text-sm text-muted-foreground">No gifts yet in this room.</p>
           )}
           {!loading && rows.map((r, i) => {
-            const initial = (r.username ?? "?").slice(0, 1).toUpperCase();
+            const initial = (r.username ??"?").slice(0, 1).toUpperCase();
             const rank = i + 1;
             const rankBadge =
-              rank === 1 ? "bg-gradient-to-br from-[color:var(--gold)] to-orange-500 text-black"
-              : rank === 2 ? "bg-gradient-to-br from-zinc-300 to-zinc-500 text-black"
-              : rank === 3 ? "bg-gradient-to-br from-orange-400 to-amber-700 text-black"
-              : "bg-white/10 text-white/80";
+              rank === 1 ?"bg-gradient-to-br from-[color:var(--gold)] to-orange-500 text-black"
+              : rank === 2 ?"bg-gradient-to-br from-zinc-300 to-zinc-500 text-black"
+              : rank === 3 ?"bg-gradient-to-br from-orange-400 to-amber-700 text-black"
+              :"bg-white/10 text-white/80";
             return (
               <div key={r.sender_id} className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/40 p-2.5">
                 <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-black ${rankBadge}`}>
@@ -4029,9 +4012,9 @@ function GifterListSheet({
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold">{r.username ?? "user"}</p>
+                  <p className="truncate text-sm font-bold">{r.username ??"user"}</p>
                   <p className="text-[11px] text-muted-foreground">
-                    {r.gift_count} gift{r.gift_count === 1 ? "" : "s"}
+                    {r.gift_count} gift{r.gift_count === 1 ?"" :"s"}
                   </p>
                 </div>
                 <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-2.5 py-1 text-[11px] font-black text-black">
@@ -4094,7 +4077,7 @@ function MiniProfileSheet({
     queryKey: ["mini-profile-cp-partner", target?.id, currentUserId],
     enabled: !!target?.id && !!currentUserId,
     staleTime: 0,
-    refetchOnMount: "always",
+    refetchOnMount:"always",
     retry: 2,
     queryFn: async () => {
       const partner = await getCpPublicPartner(target!.id);
@@ -4125,9 +4108,9 @@ function MiniProfileSheet({
         );
       }
       await qc.invalidateQueries({ queryKey: ["mini-profile-follow", currentUserId, target.id] });
-      toast.success(following ? "Unfollowed" : "Following");
+      toast.success(following ?"Unfollowed" :"Following");
     } catch (e) {
-      toast.error((e as Error).message ?? "Follow failed");
+      toast.error((e as Error).message ??"Follow failed");
     } finally {
       setBusy(false);
     }
@@ -4139,15 +4122,15 @@ function MiniProfileSheet({
     <>
       <div
         data-jalwa-overlay="true"
-        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-black/60"
         onClick={onClose}
       />
       <div
         data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 flex w-full max-w-[480px] -translate-x-1/2 flex-col rounded-t-3xl border-t border-border bg-card p-5 text-foreground shadow-2xl"
         style={{
-          maxHeight: "85vh",
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)",
+          maxHeight:"85vh",
+          paddingBottom:"calc(env(safe-area-inset-bottom) + 20px)",
         }}
       >
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/25" />
@@ -4160,17 +4143,17 @@ function MiniProfileSheet({
             )}
           </div>
           <p className="text-base font-extrabold">
-            {target.username ?? "user"}
+            {target.username ??"user"}
           </p>
         </div>
 
         {miniProfileCpPartner.data && (
-          <button type="button" onClick={() => { onClose(); navigate({ to: "/u/$userId", params: { userId: miniProfileCpPartner.data!.id } }); }}
+          <button type="button" onClick={() => { onClose(); navigate({ to:"/u/$userId", params: { userId: miniProfileCpPartner.data!.id } }); }}
             className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-pink-300/30 bg-gradient-to-r from-pink-500/15 to-fuchsia-500/10 p-3 text-left">
             {miniProfileCpPartner.data.avatar
               ? <img src={miniProfileCpPartner.data.avatar} alt="" className="h-11 w-11 rounded-full border-2 border-pink-300/70 object-cover" />
               : <span className="grid h-11 w-11 place-items-center rounded-full border-2 border-pink-300/70 bg-pink-500/15 text-lg">♥</span>}
-            <span className="min-w-0 flex-1"><span className="block text-[10px] font-black uppercase tracking-[.18em] text-pink-300">CP Partner</span><span className="block truncate text-sm font-extrabold">{miniProfileCpPartner.data.username || "JALWA User"}</span></span>
+            <span className="min-w-0 flex-1"><span className="block text-[10px] font-black uppercase tracking-[.18em] text-pink-300">CP Partner</span><span className="block truncate text-sm font-extrabold">{miniProfileCpPartner.data.username ||"JALWA User"}</span></span>
             <Heart className="h-4 w-4 shrink-0 text-pink-300" />
           </button>
         )}
@@ -4178,7 +4161,7 @@ function MiniProfileSheet({
         <div className="mt-5 grid grid-cols-3 gap-2">
           <button
             disabled={isSelf}
-            onClick={() => { onClose(); navigate({ to: "/u/$userId", params: { userId: target.id } }); }}
+            onClick={() => { onClose(); navigate({ to:"/u/$userId", params: { userId: target.id } }); }}
             className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-white/15 bg-white/5 py-3 text-xs font-bold text-white/90 disabled:opacity-40"
           >
             <UserIcon className="h-4 w-4" />
@@ -4189,16 +4172,16 @@ function MiniProfileSheet({
             onClick={() => void toggleFollow()}
             className={`flex flex-col items-center justify-center gap-1 rounded-2xl border py-3 text-xs font-bold disabled:opacity-40 ${
               following
-                ? "border-white/15 bg-white/5 text-white/80"
-                : "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/20 text-white"
+                ?"border-white/15 bg-white/5 text-white/80"
+                :"border-[color:var(--primary)]/60 bg-[color:var(--primary)]/20 text-white"
             }`}
           >
             <UserPlus className="h-4 w-4" />
-            {following ? "Following" : followsMe.data ? "Follow back" : "Follow"}
+            {following ?"Following" : followsMe.data ?"Follow back" :"Follow"}
           </button>
           <button
             disabled={isSelf}
-            onClick={() => { onClose(); navigate({ to: "/messages/$peerId", params: { peerId: target.id } }); }}
+            onClick={() => { onClose(); navigate({ to:"/messages/$peerId", params: { peerId: target.id } }); }}
             className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-[color:var(--secondary)]/60 bg-[color:var(--secondary)]/20 py-3 text-xs font-bold text-white disabled:opacity-40"
           >
             <Send className="h-4 w-4" />
