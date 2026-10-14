@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { getDevicePosition } from "@/lib/device-location";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { LevelAvatar } from "@/components/LevelAvatar";
@@ -99,10 +100,9 @@ function Page() {
   }
 
   async function detectLocation() {
-    if (!navigator.geolocation) return toast.error("GPS location is not supported on this device");
     setLocating(true);
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }));
+      const position = await getDevicePosition({ enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
       const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=10&addressdetails=1`;
       const response = await fetch(url, { headers: { Accept: "application/json" } });
       if (!response.ok) throw new Error("Could not look up your city. Please try again.");
