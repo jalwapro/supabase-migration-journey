@@ -375,7 +375,7 @@ function MessagesPage() {
 
         <div className="relative mx-auto max-w-[520px] px-4 pt-4">
           {/* HEADER */}
-          <header className="sticky top-0 z-30 -mx-4 flex items-center justify-between border-b border-white/5 bg-background/70 px-4 py-3 backdrop-blur-2xl">
+          <header className="sticky top-0 z-30 -mx-4 flex items-center justify-between border-b border-white/5 bg-background/70 px-4 py-3 -2xl">
             <div className="flex items-center gap-2">
               <span
                 className="bg-gradient-to-r from-pink-400 via-fuchsia-500 to-purple-500 bg-clip-text text-2xl leading-none tracking-tight text-transparent"
@@ -412,13 +412,13 @@ function MessagesPage() {
                 value={rawQuery}
                 onChange={(e) => setRawQuery(e.target.value)}
                 placeholder="Search users, chats, rooms…"
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.04] py-3 pl-10 pr-3 text-sm text-white placeholder:text-white/40 outline-none backdrop-blur-md focus:border-fuchsia-400/60 focus:shadow-[0_0_25px_rgba(217,70,239,0.25)]"
+                className="w-full rounded-2xl border border-white/10 bg-white/[0.04] py-3 pl-10 pr-3 text-sm text-white placeholder:text-white/40 outline-none  focus:border-fuchsia-400/60 focus:shadow-[0_0_25px_rgba(217,70,239,0.25)]"
               />
             </div>
             <button
               onClick={() => setMuteFilter((v) => !v)}
               className={classNames(
-                "grid h-11 w-11 place-items-center rounded-2xl border backdrop-blur-md",
+                "grid h-11 w-11 place-items-center rounded-2xl border ",
                 muteFilter
                   ? "border-fuchsia-400/60 bg-fuchsia-500/20 text-fuchsia-200 shadow-[0_0_20px_rgba(217,70,239,0.35)]"
                   : "border-white/10 bg-white/[0.04] text-white/70",
@@ -518,7 +518,7 @@ function IconBtn({
   return (
     <span
       aria-label={ariaLabel}
-      className="relative grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-white/80 backdrop-blur-md transition hover:border-fuchsia-400/50 hover:text-white"
+      className="relative grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-white/80  transition hover:border-fuchsia-400/50 hover:text-white"
     >
       {children}
       {!!badge && badge > 0 && (
@@ -618,7 +618,7 @@ function StoryTile({
 
 function EmptyBlock({ title, hint }: { title: string; hint: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center backdrop-blur-md">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center ">
       <Sparkles className="mx-auto h-8 w-8 text-fuchsia-300/70" />
       <p className="mt-3 text-sm font-semibold text-white/90" style={HEADING}>{title}</p>
       <p className="mt-1 text-xs text-white/50">{hint}</p>
@@ -661,7 +661,7 @@ function InboxRowCard({ row, online }: { row: InboxRow; online: boolean }) {
       <Link
         to="/messages/$peerId"
         params={{ peerId: row.peer_id }}
-        className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-md transition hover:border-fuchsia-400/50 hover:bg-white/[0.06] hover:shadow-[0_0_25px_rgba(217,70,239,0.15)]"
+        className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] p-3  transition hover:border-fuchsia-400/50 hover:bg-white/[0.06] hover:shadow-[0_0_25px_rgba(217,70,239,0.15)]"
       >
         <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500/60 to-purple-600/60 p-[2px]">
           <span className="grid h-full w-full place-items-center overflow-hidden rounded-full bg-[#120820] font-bold text-white/80">
@@ -733,7 +733,7 @@ function FollowersList({ loading, rows, onlineSet }: { loading: boolean; rows: P
       {rows.map((p) => (
         <li
           key={p.id}
-          className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-md"
+          className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3 "
         >
           <Link
             to="/u/$userId"
@@ -787,7 +787,7 @@ function RoomsList({ loading, rows }: { loading: boolean; rows: LiveRoom[] }) {
           <Link
             to="/room/$roomId"
             params={{ roomId: r.id }}
-            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-md transition hover:border-fuchsia-400/50 hover:shadow-[0_0_25px_rgba(217,70,239,0.15)]"
+            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3  transition hover:border-fuchsia-400/50 hover:shadow-[0_0_25px_rgba(217,70,239,0.15)]"
           >
             <span className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500/60 to-purple-600/60">
               {r.cover_url
@@ -873,7 +873,7 @@ function ComposeSheet({ uid, onClose }: { uid: string; onClose: () => void }) {
   const loading = debouncedQ.length >= 2 ? searchQ.isLoading : followingQ.isLoading;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 " onClick={onClose}>
       <div
         className="relative w-full max-w-[520px] rounded-t-3xl border-t border-white/10 bg-[#0d0620] p-4 pb-8"
         style={{ ...BODY, maxHeight: "85vh" }}
