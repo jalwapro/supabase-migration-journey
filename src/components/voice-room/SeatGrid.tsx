@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Settings } from "lucide-react";
+import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Settings, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HostCard } from "./HostCard";
 import { LevelAvatar } from "@/components/LevelAvatar";
@@ -66,6 +66,8 @@ export type RoomParticipant = {
   ring?: string | null;
   gift_score?: number;
   level?: number;
+  is_muted?: boolean;
+  is_speaking?: boolean;
 };
 
 export function Seat({ seat, onClick, profileMedia = null, partnerPresentOnStage = false }: SeatProps) {
@@ -77,7 +79,6 @@ export function Seat({ seat, onClick, profileMedia = null, partnerPresentOnStage
   const giftScore = user?.gift_score ?? user?.popularity ?? 0;
   const isMuted = user?.is_muted || user?.mic === "muted" || user?.mic === "off";
   const speaking = (user?.is_speaking && !isMuted) || user?.mic === "speaking";
-
 
   if (!user) {
     return (
@@ -101,11 +102,21 @@ export function Seat({ seat, onClick, profileMedia = null, partnerPresentOnStage
       <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
         <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
         <span data-avatar="true" data-seat-media="true" className="relative z-20 h-[62px] w-[62px] shrink-0 p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-          <CpSeatAura cpLevel={profileMedia?.cp_level} partnerPresentOnStage={partnerPresentOnStage} isSpeaking={speaking}><LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={profileMedia?.render_config} className={cn("origin-center", speaking && "ring-2 ring-fuchsia-400 shadow-[0_0_24px_rgba(236,72,153,0.95)] animate-[pulse_0.85s_ease-in-out_infinite]")} /></CpSeatAura>
-          <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>{isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}</span>
+          <CpSeatAura cpLevel={profileMedia?.cp_level} partnerPresentOnStage={partnerPresentOnStage} isSpeaking={speaking}>
+            <LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={profileMedia?.render_config} className={cn("origin-center", speaking && "ring-2 ring-fuchsia-400 shadow-[0_0_24px_rgba(236,72,153,0.95)] animate-[pulse_0.85s_ease-in-out_infinite]")} />
+          </CpSeatAura>
+          <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
+            {isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}
+          </span>
         </span>
-        <span className="flex w-full items-center justify-center gap-0.5 truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow"><span className="truncate">{username}</span><CountryFlag country={profileMedia?.country} countryCode={profileMedia?.country_code} className="text-[10px]" /></span>
-        <span className="flex items-center gap-0.5 text-[8px] font-medium text-white"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(giftScore)}</span>
+        <span className="flex w-full items-center justify-center gap-0.5 truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">
+          <span className="truncate">{username}</span>
+          <CountryFlag country={profileMedia?.country} countryCode={profileMedia?.country_code} className="text-[10px]" />
+        </span>
+        <span className="flex items-center gap-0.5 text-[8px] font-medium text-white">
+          <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />
+          {formatCount(giftScore)}
+        </span>
       </button>
     </div>
   );
@@ -131,12 +142,12 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const [lockBusy, setLockBusy] = useState<number | null>(null);
   const [selectedEmptySeat, setSelectedEmptySeat] = useState<RoomSeat | null>(null);
   const [roomViewers, setRoomViewers] = useState<RoomViewer[]>([]);
-    const [hostSeatIndex, setHostSeatIndex] = useState(1);
+  const [hostSeatIndex, setHostSeatIndex] = useState(1);
+
   // Load all seated users' frame/ring/level/country metadata in one batch.
-  // Keep the dependency as a stable ID string so mic-level/speaking updates
-  // do not retrigger database requests.
   const seatUserIds = [...new Set([host.id, ...seats.map((seat) => seat.user?.id).filter((id): id is string => !!id)])].sort().join(",");
   const [profileMediaById, setProfileMediaById] = useState<Record<string, SeatProfileMedia>>({});
+
   useEffect(() => {
     if (!seatUserIds) { setProfileMediaById({}); return; }
     let active = true;
@@ -287,8 +298,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     });
     if (error) {
       const message = error.message || "";
-      // Another host/moderator may have handled this request already. The
-      // realtime UPDATE can arrive late, so close the stale popup locally.
       const alreadyHandled =
         /request already handled|request not found|status.*pending/i.test(message);
       if (alreadyHandled) {
@@ -347,10 +356,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       .filter(s => s.user?.id !== host.id)
       .map(s => [s.index ?? s.seatNumber!, s]),
   );
-  const participantSlots = Array.from({ length: Math.max(0, capacity - 1) }, (_, offset): RoomSeat => {
-    const index = offset + 2;
-    return byIndex.get(index) ?? { index, seatNumber: index, user: null, is_locked: false, is_requested: false };
-  });
 
   const handleSeatClick = async (seat: RoomSeat) => {
     const idx = seat.index ?? seat.seatNumber ?? 1;
@@ -362,10 +367,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       onSeatTap?.(idx);
       return;
     }
-    // Hosts/moderators must get the Seat Manager first. The manager contains
-    // lock/unlock and host assignment controls; moving the host is an action
-    // inside that popup. Previously the host branch ran first and swallowed
-    // the popup click, making seat lock/assign appear broken.
     if (canManageSeats) {
       setSelectedEmptySeat(seat);
       return;
@@ -435,14 +436,13 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     return byIndex.get(index) ?? { index, seatNumber: index, user: null, is_locked: false, is_requested: false };
   });
 
-  
   // Detect if any couple is present on stage
   const activeStageCouple = useMemo(() => {
     const seatedList: Array<{ seatIndex: number; userId: string; username: string; avatar: string | null; cpLevel: number; partnerId?: string | null }> = [];
     const hostMedia = profileMediaById[host.id];
     if (hostMedia?.cp_partner_id) {
       seatedList.push({
-        seatIndex: 1,
+        seatIndex: safeHostSeatIndex,
         userId: host.id,
         username: host.username,
         avatar: host.avatar,
@@ -479,7 +479,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       }
     }
     return null;
-  }, [seats, host, profileMediaById]);
+  }, [seats, host, profileMediaById, safeHostSeatIndex]);
 
   return (
     <section data-seat-grid="true" data-seat-grid-root="true" className="relative mx-auto flex w-full max-w-[480px] min-h-0 flex-col items-center justify-center px-[clamp(2px,1.2vw,8px)] py-1 bg-transparent overflow-visible" data-seat-capacity={capacity}>
@@ -492,20 +492,74 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
           const partnerPresentOnStage = !!seatCp?.cp_partner_id && occupiedIds.has(seatCp.cp_partner_id);
           const hostCp = profileMediaById[host.id];
           const hostPartnerPresentOnStage = !!hostCp?.cp_partner_id && occupiedIds.has(hostCp.cp_partner_id);
-          if (seat.isHost) return (
-            <div key={seatIdx} data-seat="true" data-seat-cell="true" data-user-dp={host.id} data-jalwa-live-component="voice.host" data-seat-index={seatIdx} className="relative flex h-[68px] min-h-[68px] w-full min-w-0 flex-col items-center justify-start p-0.5 overflow-visible">
-              <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
-                <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
-                <span data-avatar="true" data-seat-media="true" className="relative z-20 h-[62px] w-[62px] shrink-0 p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-                  <span className="relative block h-full w-full overflow-visible rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md"><CpSeatAura cpLevel={hostCp?.cp_level} partnerPresentOnStage={hostPartnerPresentOnStage}><HostCard host={host} onTap={() => onHostTap?.()} /></CpSeatAura></span>
 
-                </span>
-                <span className="flex w-full items-center justify-center gap-0.5 truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow"><span className="truncate">{host.username}</span><CountryFlag country={(host as { country?: string | null }).country} countryCode={(host as { country_code?: string | null }).country_code} className="text-[10px]" /></span>
-                <span className="flex items-center gap-0.5 text-[8px] font-medium text-white"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}</span>
+          if (seat.isHost) {
+            const hostSpeaking = (host.is_speaking && !host.is_muted) || false;
+            return (
+              <div 
+                key={seatIdx} 
+                data-seat="true" 
+                data-seat-cell="true" 
+                data-user-dp={host.id} 
+                data-jalwa-live-component="voice.host" 
+                data-seat-index={seatIdx} 
+                className="relative flex h-[84px] min-h-[84px] w-full min-w-0 flex-col items-center justify-start p-0.5 overflow-visible"
+              >
+                <button 
+                  type="button" 
+                  onClick={() => onHostTap?.()} 
+                  className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
+                >
+                  <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">
+                    {seatIdx}
+                  </span>
+                  <span data-avatar="true" data-seat-media="true" className="relative z-20 h-[62px] w-[62px] shrink-0 p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
+                    <CpSeatAura 
+                      cpLevel={hostCp?.cp_level} 
+                      partnerPresentOnStage={hostPartnerPresentOnStage} 
+                      isSpeaking={hostSpeaking}
+                    >
+                      <LevelAvatar 
+                        src={host.avatar} 
+                        name={host.username} 
+                        level={host.level ?? hostCp?.level ?? 0} 
+                        size="sm" 
+                        showBadge={false} 
+                        frame={host.avatar_frame_url || host.frame_url || hostCp?.frame} 
+                        ring={host.ring || hostCp?.ring} 
+                        renderConfigOverride={hostCp?.render_config} 
+                        className={cn("origin-center", hostSpeaking && "ring-2 ring-fuchsia-400 shadow-[0_0_24px_rgba(236,72,153,0.95)] animate-[pulse_0.85s_ease-in-out_infinite]")} 
+                      />
+                    </CpSeatAura>
+                    <span className="absolute -left-1 -top-1 z-40 grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-[#5b2800] shadow">
+                      <Crown className="h-2.5 w-2.5 fill-current" />
+                    </span>
+                    <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", host.is_muted ? "bg-red-500" : "bg-emerald-500")}>
+                      {host.is_muted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}
+                    </span>
+                  </span>
+                  <span className="flex w-full items-center justify-center gap-0.5 truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow">
+                    <span className="truncate">{host.username}</span>
+                    <CountryFlag country={(host as { country?: string | null }).country} countryCode={(host as { country_code?: string | null }).country_code} className="text-[10px]" />
+                  </span>
+                  <span className="flex items-center gap-0.5 text-[8px] font-medium text-white">
+                    <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />
+                    {formatCount(host.gift_score ?? 0)}
+                  </span>
+                </button>
               </div>
-            </div>
+            );
+          }
+
+          return (
+            <Seat 
+              key={seatIdx} 
+              seat={{ ...seat, index: seatIdx }} 
+              profileMedia={seat.user?.id ? profileMediaById[seat.user.id] ?? null : null} 
+              partnerPresentOnStage={partnerPresentOnStage} 
+              onClick={() => void handleSeatClick(seat)} 
+            />
           );
-          return <Seat key={seatIdx} seat={{ ...seat, index: seatIdx }} profileMedia={seat.user?.id ? profileMediaById[seat.user.id] ?? null : null} partnerPresentOnStage={partnerPresentOnStage} onClick={() => void handleSeatClick(seat)} />;
         })}
       </div>
 
