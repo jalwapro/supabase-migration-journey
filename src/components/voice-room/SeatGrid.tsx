@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HostCard } from "./HostCard";
 import { LevelAvatar } from "@/components/LevelAvatar";
 import { CountryFlag } from "@/components/CountryFlag";
 import { CpSeatAura } from "@/components/CP/CpSeatAura";
+import { CpStageConnectionOverlay } from "@/components/CP/CpStageConnectionOverlay";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -434,9 +435,56 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     return byIndex.get(index) ?? { index, seatNumber: index, user: null, is_locked: false, is_requested: false };
   });
 
+  
+  // Detect if any couple is present on stage
+  const activeStageCouple = useMemo(() => {
+    const seatedList: Array<{ seatIndex: number; userId: string; username: string; avatar: string | null; cpLevel: number; partnerId?: string | null }> = [];
+    const hostMedia = profileMediaById[host.id];
+    if (hostMedia?.cp_partner_id) {
+      seatedList.push({
+        seatIndex: 1,
+        userId: host.id,
+        username: host.username,
+        avatar: host.avatar,
+        cpLevel: hostMedia.cp_level || 1,
+        partnerId: hostMedia.cp_partner_id,
+      });
+    }
+    for (const seat of seats) {
+      const u = seat.user;
+      if (u?.id) {
+        const media = profileMediaById[u.id];
+        if (media?.cp_partner_id) {
+          seatedList.push({
+            seatIndex: seat.index ?? seat.seatNumber ?? 1,
+            userId: u.id,
+            username: u.username,
+            avatar: u.avatar,
+            cpLevel: media.cp_level || 1,
+            partnerId: media.cp_partner_id,
+          });
+        }
+      }
+    }
+    for (let i = 0; i < seatedList.length; i++) {
+      for (let j = i + 1; j < seatedList.length; j++) {
+        if (seatedList[i].partnerId === seatedList[j].userId) {
+          return {
+            partnerA: seatedList[i],
+            partnerB: seatedList[j],
+            intimacyScore: profileMediaById[seatedList[i].userId]?.cp_intimacy_score || 0,
+            daysTogether: Math.max(1, Math.floor((profileMediaById[seatedList[i].userId]?.cp_intimacy_score || 0) / 100)),
+          };
+        }
+      }
+    }
+    return null;
+  }, [seats, host, profileMediaById]);
+
   return (
     <section data-seat-grid="true" data-seat-grid-root="true" className="relative mx-auto flex w-full max-w-[480px] min-h-0 flex-col items-center justify-center px-[clamp(2px,1.2vw,8px)] py-1 bg-transparent overflow-visible" data-seat-capacity={capacity}>
       <div data-seat-grid-cells="true" className="grid w-full grid-cols-5 items-start justify-items-center gap-x-1 gap-y-1 bg-transparent [grid-auto-rows:84px]">
+        <CpStageConnectionOverlay couple={activeStageCouple} capacity={capacity} />
         {allSeats.map((seat) => {
           const seatIdx = seat.index ?? seat.seatNumber ?? 1;
           const occupiedIds = new Set([host.id, ...seats.map((item) => item.user?.id).filter((id): id is string => !!id)]);
