@@ -88,6 +88,8 @@ function DmThread() {
 
   const peer = useQuery({
     queryKey: ["profile-chat", peerId],
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -109,6 +111,8 @@ function DmThread() {
   const myBubble = useQuery({
     queryKey: ["my-bubble", user?.id],
     enabled: !!user,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     queryFn: async () => {
       const { data } = await supabase.from("profiles").select("bubble").eq("id", user!.id).maybeSingle();
       return (data?.bubble as string | null) ?? null;
@@ -557,7 +561,7 @@ function DmThread() {
       <div className="mx-auto flex h-full w-full max-w-md flex-col">
 
         <header
-          className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/80 px-3 py-3 backdrop-blur-xl"
+          className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background px-3 py-3 "
           style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
         >
           <button
@@ -718,7 +722,7 @@ function DmThread() {
 
         {/* Composer — Jalwa premium */}
         <div
-          className="sticky bottom-0 border-t border-[color:var(--gold)]/20 bg-gradient-to-t from-background via-background/95 to-background/80 px-2.5 pt-2 backdrop-blur-xl"
+          className="sticky bottom-0 border-t border-[color:var(--gold)]/20 bg-gradient-to-t from-background via-background/95 to-background/80 px-2.5 pt-2 "
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
         >
           {recording ? (
