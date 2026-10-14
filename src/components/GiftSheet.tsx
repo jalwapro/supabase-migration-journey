@@ -44,6 +44,17 @@ const TIER_LABEL: Record<Tier, string> = { small: "✨ Basic", premium: "💎 Pr
 function tierOf(price: number): Tier { if (price <= 300) return "small"; if (price < 2000) return "premium"; return "vip"; }
 const price = (g: Gift | null): number => (g?.price_coins ?? g?.price ?? 0) as number;
 const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
+
+// CP-exclusive gifts currently have no dedicated animation files in the CP
+// catalogue. Reuse verified existing romantic MP4 assets instead of pointing
+// the player at the non-existent /gifts-romantic-v2 public directory.
+const CP_GIFT_ANIMATION_FALLBACKS: Record<string, string> = {
+  cp_rose_bouquet: "/__l5e/assets-v1/52b0368c-56af-406e-ba16-264038c96b28/07-999-roses-heart.mp4",
+  cp_love_letter: "/__l5e/assets-v1/a1b29c69-f9fe-4ea6-b777-3939c7019baa/01-rooftop-kiss.mp4",
+  cp_eternal_wings: "/__l5e/assets-v1/3526a763-6b70-4a02-af44-bef62262c8b0/08-pegasus-flight.mp4",
+  cp_dream_castle: "/__l5e/assets-v1/20a9db23-6afe-482b-876d-be5c335167ae/05-golden-carriage.mp4",
+  cp_galaxy_carriage: "/__l5e/assets-v1/283b9a4d-e6c7-4bd9-974b-ba853244aea7/04-proposal-fireworks.mp4",
+};
 const ROYAL_ROSE_THUMB_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
 
 function isRoyalRoseGift(name: string | null | undefined) {
@@ -268,11 +279,11 @@ export function GiftSheet({
         .order("sort_order", { ascending: true });
       if (error || !data || data.length === 0) {
         return [
-          { id: "cp_rose_bouquet", name: "Sweet Rose Bouquet", price: 999, icon_url: "/gifts/basic-3d/rose.png", intimacy_points: 100, required_cp_level: 1, animation_url: "/gifts-romantic-v2/02-crystal-heart-burst.mp4", description: "Gentle romantic care" },
-          { id: "cp_love_letter", name: "Love Confession", price: 2520, icon_url: "/gifts/basic-3d/confession-letter.png", intimacy_points: 280, required_cp_level: 2, animation_url: "/gifts-romantic-v2/01-rooftop-kiss.mp4", description: "Heartfelt confession" },
-          { id: "cp_eternal_wings", name: "Eternal Wings", price: 5200, icon_url: "/gifts/basic-3d/sweet-love.png", intimacy_points: 600, required_cp_level: 3, animation_url: "/gifts-romantic-v2/08-pegasus-flight.mp4", description: "Wings of eternal devotion" },
-          { id: "cp_dream_castle", name: "Dream Love Castle", price: 13140, icon_url: "/gifts/basic-3d/crown.png", intimacy_points: 1600, required_cp_level: 4, animation_url: "/gifts-romantic-v2/05-golden-carriage.mp4", description: "Royal fairy castle" },
-          { id: "cp_galaxy_carriage", name: "Galaxy Carriage", price: 52000, icon_url: "/gifts/basic-3d/love-ring.png", intimacy_points: 6800, required_cp_level: 5, animation_url: "/gifts-romantic-v2/04-proposal-fireworks.mp4", description: "Celestial romance carriage" },
+          { id: "cp_rose_bouquet", name: "Sweet Rose Bouquet", price: 999, icon_url: "/gifts/basic-3d/rose.png", intimacy_points: 100, required_cp_level: 1, animation_url: CP_GIFT_ANIMATION_FALLBACKS.cp_rose_bouquet, description: "Gentle romantic care" },
+          { id: "cp_love_letter", name: "Love Confession", price: 2520, icon_url: "/gifts/basic-3d/confession-letter.png", intimacy_points: 280, required_cp_level: 2, animation_url: CP_GIFT_ANIMATION_FALLBACKS.cp_love_letter, description: "Heartfelt confession" },
+          { id: "cp_eternal_wings", name: "Eternal Wings", price: 5200, icon_url: "/gifts/basic-3d/sweet-love.png", intimacy_points: 600, required_cp_level: 3, animation_url: CP_GIFT_ANIMATION_FALLBACKS.cp_eternal_wings, description: "Wings of eternal devotion" },
+          { id: "cp_dream_castle", name: "Dream Love Castle", price: 13140, icon_url: "/gifts/basic-3d/crown.png", intimacy_points: 1600, required_cp_level: 4, animation_url: CP_GIFT_ANIMATION_FALLBACKS.cp_dream_castle, description: "Royal fairy castle" },
+          { id: "cp_galaxy_carriage", name: "Galaxy Carriage", price: 52000, icon_url: "/gifts/basic-3d/love-ring.png", intimacy_points: 6800, required_cp_level: 5, animation_url: CP_GIFT_ANIMATION_FALLBACKS.cp_galaxy_carriage, description: "Celestial romance carriage" },
         ];
       }
       return data;
@@ -282,25 +293,31 @@ export function GiftSheet({
   });
 
   const cpGifts = useMemo<Gift[]>(() => {
-    return (cpGiftsQuery.data ?? []).map((cg) => ({
-      id: cg.id,
-      name: cg.name,
-      icon: "💖",
-      emoji: "💖",
-      icon_path: cg.icon_url,
-      image_url: cg.icon_url,
-      price_coins: Number(cg.price),
-      price: Number(cg.price),
-      diamonds_value: Number(cg.price),
-      category: "cp",
-      animation: "video",
-      clip_path: cg.animation_url ?? "/gifts-romantic-v2/02-crystal-heart-burst.mp4",
-      clip_type: cg.animation_url?.endsWith(".svga") ? "svga" : "mp4",
-      sound_url: null,
-      is_cp: true,
-      intimacy_points: Number(cg.intimacy_points ?? 100),
-      required_cp_level: Number(cg.required_cp_level ?? 1),
-    }));
+    return (cpGiftsQuery.data ?? []).map((cg) => {
+      // Database animation_url is intentionally nullable until dedicated CP
+      // animation files exist; always substitute a known, existing romantic
+      // clip so the room player never receives a dead relative URL.
+      const animationUrl = cg.animation_url || CP_GIFT_ANIMATION_FALLBACKS[cg.id] || CP_GIFT_ANIMATION_FALLBACKS.cp_rose_bouquet;
+      return {
+        id: cg.id,
+        name: cg.name,
+        icon: "💖",
+        emoji: "💖",
+        icon_path: cg.icon_url,
+        image_url: cg.icon_url,
+        price_coins: Number(cg.price),
+        price: Number(cg.price),
+        diamonds_value: Number(cg.price),
+        category: "cp",
+        animation: "video",
+        clip_path: animationUrl,
+        clip_type: animationUrl.toLowerCase().split(/[?#]/)[0].endsWith(".svga") ? "svga" : "mp4",
+        sound_url: null,
+        is_cp: true,
+        intimacy_points: Number(cg.intimacy_points ?? 100),
+        required_cp_level: Number(cg.required_cp_level ?? 1),
+      };
+    });
   }, [cpGiftsQuery.data]);
 
   const visibleGifts = useMemo(() => {
