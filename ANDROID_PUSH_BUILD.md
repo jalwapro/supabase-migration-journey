@@ -1,6 +1,6 @@
 # Android Push Build
 
-The repository intentionally keeps generated Capacitor Android files out of `main`, but push notifications require a real native Android project. This workflow generates a fresh Capacitor 8 Android project, restores Jalwa's Firebase config, applies the Android notification permissions/channel, and builds a debug APK.
+The repository intentionally keeps generated Capacitor Android files out of `main`, but push notifications require a real native Android project. This workflow generates a fresh Capacitor 8 Android project, restores Jalwa's Firebase config, applies Android location and notification permissions/channel, and builds a debug APK.
 
 ## Local build
 
@@ -8,6 +8,8 @@ The repository intentionally keeps generated Capacitor Android files out of `mai
 npm install
 npm run build
 node scripts/bootstrap-android.mjs
+# This step adds ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION,
+# and POST_NOTIFICATIONS to the generated Android manifest.
 cd android
 ./gradlew assembleDebug
 ```
