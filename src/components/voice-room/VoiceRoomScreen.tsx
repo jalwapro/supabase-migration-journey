@@ -365,3 +365,84 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
           <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="grid h-full w-full place-items-center rounded-[12px] bg-black/60  text-amber-200"><Gift className="h-4.5 w-4.5 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ color: primaryThemeColor }} /></div>
         </button>
+
+        <button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label={isHost ? "Host Room Settings" : isModerator ? "Moderator Controls" : "More"}>{isHost ? <Shield className="h-3.5 w-3.5" style={{ color: primaryThemeColor }} /> : isModerator ? <Shield className="h-3.5 w-3.5 text-cyan-400" /> : <Grid2X2 className="h-3.5 w-3.5 text-white" />}</button>
+      </nav>
+
+      <JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />
+
+      {showMiniInputPopup && (
+        <div className="absolute inset-0 z-[2147483500] flex items-end justify-center bg-black/30 animate-fade-in p-0" onClick={() => setShowMiniInputPopup(false)}>
+          <div className="w-full max-w-[480px] bg-[#120a1f] border-t p-2.5 rounded-t-2xl shadow-2xl flex items-center gap-2 animate-slide-up" style={{ borderColor: `${primaryThemeColor}66` }} onClick={e => e.stopPropagation()}>
+            <input value={miniDraft} onChange={e => setMiniDraft(e.target.value.slice(0, 500))} onKeyDown={async e => { if (e.key === "Enter") { e.preventDefault(); if (!miniDraft.trim()) return; const message = miniDraft; setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(message); } }} placeholder="Type a comment..." autoFocus autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="send" inputMode="text" className="flex-1 bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-xs font-medium text-white placeholder:text-white/65 outline-none" style={{ borderColor: primaryThemeColor }} />
+            <button type="button" onClick={async () => { if (!miniDraft.trim()) return; const message = miniDraft; setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(message); }} className="px-4 py-2 rounded-xl text-white font-extrabold text-xs shadow-lg active:scale-95 transition" style={{ background: `linear-gradient(90deg, ${primaryThemeColor}, ${accentThemeColor})` }}>Send</button>
+          </div>
+        </div>
+      )}
+
+      {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
+      <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(emoji, targetSeatIndex) => onSendEmoji?.(emoji, targetSeatIndex)} />
+
+      {userMoreOpen && (
+        <div className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/30 p-0 animate-fade-in" onClick={() => setUserMoreOpen(false)}>
+          <div className="w-full max-w-sm rounded-t-3xl border-t border-x border-white/20 bg-[#100719] p-4 text-white shadow-2xl flex flex-col animate-slide-up" style={{ borderColor: `${accentThemeColor}55` }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2"><Info className="h-4 w-4" style={{ color: accentThemeColor }} /><h3 className="text-xs font-black uppercase tracking-wider" style={{ color: accentThemeColor }}>Room Options</h3></div>
+            </div>
+            <div className="py-4 space-y-2 text-xs">
+              <button type="button" onClick={() => onToggleSpeaker()} className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 active:scale-95 transition">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${speakerMuted ? "bg-rose-500/20 text-rose-300" : "bg-cyan-500/20 text-cyan-300"}`}>{speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</div>
+                  <div className="text-left"><p className="font-bold text-white">Speaker Output</p><p className="text-[10px] text-white/50">{speakerMuted ? "Awaaz band hai (Muted)" : "Awaaz chalu hai"}</p></div>
+                </div>
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${speakerMuted ? "bg-rose-500/30 text-rose-300" : "bg-cyan-500/30 text-cyan-300"}`}>{speakerMuted ? "Unmute" : "Mute"}</span>
+              </button>
+              <button type="button" onClick={() => { setUserMoreOpen(false); onShare(); }} className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 active:scale-95 transition">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-500/20 text-purple-300"><Share2 className="h-4 w-4" /></div>
+                  <div className="text-left"><p className="font-bold text-white">Share Room</p><p className="text-[10px] text-white/50">Doston ke sath room link share karein</p></div>
+                </div>
+                <span className="text-[10px] font-semibold text-purple-300 bg-purple-500/20 px-2.5 py-1 rounded-lg">Share</span>
+              </button>
+              <button type="button" onClick={() => { setUserMoreOpen(false); onReport(); }} className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 active:scale-95 transition">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/20 text-amber-300"><Flag className="h-4 w-4" /></div>
+                  <div className="text-left"><p className="font-bold text-white">Report Room</p><p className="text-[10px] text-white/50">Agar koi kharabi ya violation hai</p></div>
+                </div>
+                <span className="text-[10px] font-semibold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-lg">Report</span>
+              </button>
+            </div>
+            <button type="button" onClick={() => { setUserMoreOpen(false); onExit(); }} className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 text-white font-bold text-xs shadow-lg active:scale-95 transition flex items-center justify-center gap-2"><LogOut className="h-4 w-4" /><span>Leave Room</span></button>
+          </div>
+        </div>
+      )}
+
+      {gamesOpen && <RoomGamesSheet open={gamesOpen} onClose={() => setGamesOpen(false)} onOpenNative={slug => { setGamesOpen(false); onOpenNativeGame?.(slug); }} />}
+      {popularityOpen && <HostPopularitySheet roomId={roomId} open={popularityOpen} onClose={() => setPopularityOpen(false)} popularityPct={popularityPct} hostName={room.host?.username} />}
+      {selectedMember && (
+        <VoiceRoomMemberSheet
+          roomId={roomId}
+          member={selectedMember}
+          canModerate={isHost && selectedMember.id !== room.host?.id}
+          isHost={isHost}
+          onClose={() => setSelectedMember(null)}
+          onOpenPublicChat={(member: VoiceRoomMemberProfile) => {
+            setSelectedMember(null);
+            setMiniDraft(`@${member.username ?? "user"} `);
+            setShowMiniInputPopup(true);
+          }}
+          onOpenGift={(member: VoiceRoomMemberProfile) => {
+            setSelectedMember(null);
+            openGifts();
+          }}
+          onOpenHostControls={isHost && selectedMember.id === room.host?.id ? () => {
+            setSelectedMember(null);
+            setHostSettingsOpen(true);
+          } : undefined}
+        />
+      )}
+      {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} speakerMuted={speakerMuted} onToggleSpeaker={onToggleSpeaker} />}
+      {isModerator && <ModeratorControls roomId={roomId} open={moderatorControlsOpen} onClose={() => setModeratorControlsOpen(false)} micOn={micOn} speakerMuted={speakerMuted} onToggleMic={onToggleMic} onToggleSpeaker={onToggleSpeaker} onOpenMusic={onOpenMusic} />}
+    </main>
+  );
+};
