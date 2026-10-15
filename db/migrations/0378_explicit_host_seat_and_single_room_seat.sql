@@ -27,10 +27,6 @@ AS $$
 DECLARE
   target_type text;
 BEGIN
-  IF current_user IN ('postgres', 'service_role') THEN
-    RETURN NEW;
-  END IF;
-
   IF NEW.seat_index IS NULL THEN
     RETURN NEW;
   END IF;
