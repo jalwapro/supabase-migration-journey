@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { Eye } from "lucide-react";
-import { CountryFlag } from "@/components/CountryFlag";
 
 export const Route = createFileRoute("/_authenticated/visitors")({ component: Page });
 
@@ -72,7 +71,7 @@ function Page() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold">
-                    {r.p?.username ?? "User"} <CountryFlag country={r.p?.country} countryCode={r.p?.country_code} className="text-sm" />
+                    {r.p?.username ?? "User"}
                     {r.p?.user_code && <span className="ml-1 text-[10px] font-normal text-muted-foreground">#{r.p.user_code}</span>}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
