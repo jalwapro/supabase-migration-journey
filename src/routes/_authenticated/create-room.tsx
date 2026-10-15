@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -26,6 +26,7 @@ function formatRpcError(error: unknown) {
 function CreateRoom() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const hostName = profile?.username?.trim() || user?.email?.split("@")[0] || "jalwa";
   const [locked, setLocked] = useState(false);
   const [password, setPassword] = useState("");
@@ -71,6 +72,7 @@ function CreateRoom() {
         throw error;
       }
       if (!roomId) throw new Error("Room created but no ID was returned.");
+      await queryClient.invalidateQueries({ queryKey: ["my-host-room", user.id] });
       toast.success("Your Voice Room is live!");
       navigate({ to: "/room/$roomId", params: { roomId: String(roomId) } });
     } catch (error) {
