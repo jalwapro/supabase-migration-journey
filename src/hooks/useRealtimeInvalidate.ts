@@ -49,9 +49,10 @@ export function useRealtimeInvalidate(channelName: string, subs: Sub[]) {
       );
     }
     ch.subscribe((status, error) => {
-      if (status === "SUBSCRIBED") {
-        queueInvalidate(subs.flatMap((s) => s.invalidate));
-      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+      // Do not invalidate the whole page just because its realtime socket connected.
+      // Queries fetch when first mounted; subsequent data changes arrive as Postgres
+      // events and invalidate only the keys declared for that table.
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
         console.warn("[Realtime]", channelName, status, error);
       }
     });
