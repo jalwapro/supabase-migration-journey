@@ -259,6 +259,21 @@ function RoomPage() {
       microphoneMuted: false,
     });
   }, [roomId, user?.id, updateRoom]);
+
+  // A user can only be actively present in one room at a time. Remove their
+  // membership from any previous room immediately when entering this room so
+  // old rooms release their seats and Home counts stop showing stale people.
+  useEffect(() => {
+    if (!user?.id || !roomId) return;
+    void supabase
+      .from("room_members")
+      .delete()
+      .eq("user_id", user.id)
+      .neq("room_id", roomId)
+      .then(({ error }) => {
+        if (error) console.warn("[previous room membership cleanup]", error.message);
+      });
+  }, [roomId, user?.id]);
   const qc = useQueryClient();
   const defaultBgVisibility = useDefaultBgOpacity();
 
