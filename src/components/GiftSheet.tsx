@@ -157,16 +157,31 @@ export function GiftSheet({
       if (!profile?.id) return null;
       const { data, error } = await supabase
         .from("cp_relations")
-        .select("id,ring_level,intimacy_score,user1_id,user2_id,user1:profiles!cp_relations_user1_id_fkey(id,username,avatar),user2:profiles!cp_relations_user2_id_fkey(id,username,avatar)")
+        .select("id,ring_level,intimacy_score,user1_id,user2_id")
         .eq("status", "active")
         .or(`user1_id.eq.${profile.id},user2_id.eq.${profile.id}`)
         .maybeSingle();
-      if (error || !data) return null;
-      const partner = (data.user1_id === profile.id ? data.user2 : data.user1) as {
-        id: string;
-        username: string | null;
-        avatar: string | null;
-      } | null;
+      if (error) throw new Error(`Could not load CP relationship: ${error.message}`);
+      if (!data) return null;
+
+      // cp_relations.user1_id/user2_id reference auth.users, not profiles.
+      // PostgREST cannot join those foreign keys directly to profiles, so load
+      // the partner profile separately instead of silently reporting "No CP partner".
+      const partnerId = data.user1_id === profile.id ? data.user2_id : data.user1_id;
+      const { data: partnerProfile, error: partnerError } = await supabase
+        .from("profiles")
+        .select("id,username,avatar")
+        .eq("id", partnerId)
+        .maybeSingle();
+      if (partnerError) throw new Error(`Could not load CP partner profile: ${partnerError.message}`);
+
+      const partner = partnerProfile
+        ? {
+            id: partnerProfile.id,
+            username: partnerProfile.username ?? null,
+            avatar: partnerProfile.avatar ?? null,
+          }
+        : null;
       return {
         relationId: data.id,
         ringLevel: Number(data.ring_level ?? 1),
