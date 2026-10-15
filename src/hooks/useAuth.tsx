@@ -104,6 +104,29 @@ async function loadAdminPermissions(): Promise<string[]> {
   return Array.isArray(data) ? data.filter((value): value is string => typeof value === "string") : [];
 }
 
+const IDLE_LOGOUT_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** End only rooms owned by this account before revoking its active session. */
+async function endOwnedRooms(userId: string): Promise<void> {
+  try {
+    const { data, error } = await supabase
+      .from("live_rooms")
+      .select("id")
+      .eq("host_id", userId)
+      .in("status", ["live", "host_disconnected"])
+      .limit(20);
+    if (error) throw error;
+    for (const room of data ?? []) {
+      const { error: endError } = await supabase.rpc("end_room", { _room_id: room.id });
+      if (endError) console.warn("[useAuth] unable to end owned room before logout", room.id, endError);
+    }
+  } catch (error) {
+    // Do not trap a user in their account when connectivity or RLS is unavailable.
+    // The database inactivity reaper is the fallback for rooms that could not be ended.
+    console.warn("[useAuth] endOwnedRooms", error);
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -121,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = !isStudioPreview() && (roles.includes("admin") || roles.includes("super_admin") || (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false));
   const canAccessAdmin = !isStudioPreview() && adminPermissions.includes("dashboard.view");
 
-  const hydrate = useCallback(async (nextSession: Session | null) => {
+  const hydrate = useCallback(async (nextSession: Session | null, enforceIdleTimeout = false) => {
     setSession(nextSession);
     if (hydrateTimerRef.current) {
       clearTimeout(hydrateTimerRef.current);
@@ -146,7 +169,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             reason: (p as Profile & { ban_reason?: string | null }).ban_reason ?? "",
           }));
         } catch {}
-        void supabase.auth.signOut();
+        await endOwnedRooms(uid);
+        await supabase.auth.signOut();
         setSession(null);
         setProfile(null);
         setRoles([]);
@@ -157,6 +181,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return;
       }
+
+      // Only enforce the inactivity window when restoring an existing persisted
+      // session at app startup. A fresh, explicit login must never be rejected
+      // because this account's previous last_seen value is old.
+      const lastSeenMs = p?.last_seen ? Date.parse(p.last_seen) : NaN;
+      if (enforceIdleTimeout && Number.isFinite(lastSeenMs) && Date.now() - lastSeenMs >= IDLE_LOGOUT_MS) {
+        await endOwnedRooms(uid);
+        await supabase.auth.signOut();
+        setSession(null);
+        setProfile(null);
+        setRoles([]);
+        setAdminPermissions([]);
+        setLoading(false);
+        if (typeof window !== "undefined" && window.location.pathname !== "/auth") {
+          window.location.replace("/auth?reason=inactive");
+        }
+        return;
+      }
+
       setProfile(p);
       setRoles(r);
       setAdminPermissions(permissions);
@@ -173,7 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.warn("[useAuth] initial session", error);
     }
     initialSessionLoadedRef.current = true;
-    await hydrate(nextSession);
+    await hydrate(nextSession, true);
   }, [hydrate]);
 
   const refresh = useCallback(async () => {
@@ -226,6 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user?.id, profile?.id, profile?.country, profile?.country_code, refresh]);
 
   const signOut = useCallback(async () => {
+    if (user?.id) await endOwnedRooms(user.id);
     try {
       await supabase.auth.signOut();
     } catch (e) {
@@ -236,11 +280,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles([]);
     setAdminPermissions([]);
     if (typeof window !== "undefined") window.location.replace("/auth");
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
-      if (event === "INITIAL_SESSION" && !s && !initialSessionLoadedRef.current) return;
+      // loadInitialSession performs the one startup restore and idle-timeout check.
+      if (event === "INITIAL_SESSION") return;
       void hydrate(s);
     });
     void loadInitialSession();
@@ -248,7 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [hydrate, loadInitialSession]);
 
   useEffect(() => {
-    if (!user || isStudioPreview()) {
+    if (loading || !user || isStudioPreview()) {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       heartbeatRef.current = null;
       return;
@@ -309,7 +354,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       document.removeEventListener("visibilitychange", onVisible);
       void supabase.removeChannel(banChannel);
     };
-  }, [user]);
+  }, [user, loading]);
 
   return <AuthContext.Provider value={{ session, user, profile, roles, adminPermissions, canAccessAdmin, isAdmin, loading, refresh, signOut }}>{children}</AuthContext.Provider>;
 }
