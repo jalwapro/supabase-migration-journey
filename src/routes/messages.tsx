@@ -9,7 +9,6 @@ import {
   BadgeCheck, Crown, Loader2, Users, Home, Sparkles, UserPlus, X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { CountryFlag } from "@/components/CountryFlag";
 import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/messages")({
@@ -677,7 +676,6 @@ function InboxRowCard({ row, online }: { row: InboxRow; online: boolean }) {
           <div className="flex items-center gap-1.5">
             <p className="truncate text-sm font-bold text-white" style={HEADING}>
               {row.peer_username ?? "user"}
-              <CountryFlag country={row.peer_country} countryCode={row.peer_country_code} className="text-sm" />
             </p>
             {vip >= 5 && <Crown className="h-3.5 w-3.5 text-amber-300 drop-shadow-[0_0_4px_rgba(252,211,77,0.7)]" />}
             <BadgeCheck className="h-3.5 w-3.5 text-fuchsia-300" />
@@ -748,7 +746,7 @@ function FollowersList({ loading, rows, onlineSet }: { loading: boolean; rows: P
             )}
           </Link>
           <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-1 truncate text-sm font-bold text-white" style={HEADING}>{p.username ?? "user"} <CountryFlag country={p.country} countryCode={p.country_code} className="text-sm" /></p>
+            <p className="flex items-center gap-1 truncate text-sm font-bold text-white" style={HEADING}>{p.username ?? "user"}</p>
             <p className="truncate text-[10px] text-white/50">ID {p.user_code ?? "—"}</p>
           </div>
           <Link
@@ -929,7 +927,7 @@ function ComposeSheet({ uid, onClose }: { uid: string; onClose: () => void }) {
                 </span>
               </span>
               <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1 truncate text-sm font-bold text-white" style={HEADING}>{p.username ?? "user"} <CountryFlag country={p.country} countryCode={p.country_code} className="text-sm" /></p>
+                <p className="flex items-center gap-1 truncate text-sm font-bold text-white" style={HEADING}>{p.username ?? "user"}</p>
                 <p className="truncate text-[10px] text-white/50">ID {p.user_code ?? "—"}</p>
               </div>
               <MessageSquarePlus className="h-4 w-4 text-fuchsia-300" />
