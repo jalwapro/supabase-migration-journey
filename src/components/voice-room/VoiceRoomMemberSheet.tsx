@@ -239,7 +239,7 @@ export function VoiceRoomMemberSheet({
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 items-center gap-1.5 text-xl font-black"><span className="truncate">{displayName}</span><CountryFlag country={profile?.country} countryCode={profile?.country_code} className="text-lg" /></div>
+            <div className="flex min-w-0 items-center gap-1.5 text-xl font-black"><span className="truncate">{displayName}</span></div>
             <div className="mt-1 text-xs font-semibold text-white/65">Level {displayLevel}{displayVipLevel > 0 ? ` · VIP ${displayVipLevel}` : ""}</div>
             {(profile?.country || profile?.city) && <div className="mt-1 flex min-w-0 items-center gap-1 text-xs text-white/55"><CountryFlag country={profile?.country} countryCode={profile?.country_code} className="text-sm" /><span className="truncate">{[profile?.city, profile?.country].filter(Boolean).join(", ")}</span></div>}
             <div className="mt-2 inline-flex w-fit items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-200">● {member.is_muted ? "Microphone muted" : "Microphone active"}</div>
