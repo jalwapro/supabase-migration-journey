@@ -87,7 +87,6 @@ type SearchUser = {
 };
 
 type TabKey = "voice" | "video" | "pk";
-function flagForCountry(country?: string | null, countryCode?: string | null) { const code = countryCode?.toUpperCase(); if (code && /^[A-Z]{2}$/.test(code)) return String.fromCodePoint(...[...code].map((char) => 127397 + char.charCodeAt(0))); return COUNTRY_FLAGS[country ?? ""] ?? "🌍"; }
 const HOME_COUNTRIES = ["Pakistan", "India", "Bangladesh", "Saudi Arabia", "United Arab Emirates", "Turkey", "Egypt", "Indonesia", "Malaysia", "United States", "United Kingdom", "Philippines", "Nigeria", "Morocco", "Iraq", "Kuwait", "Qatar", "Afghanistan", "Nepal", "Sri Lanka", "Oman", "Bahrain", "Jordan", "Iran", "Canada", "Australia"];
 const COUNTRY_FLAGS: Record<string, string> = { Pakistan: "🇵🇰", India: "🇮🇳", Bangladesh: "🇧🇩", "Saudi Arabia": "🇸🇦", "United Arab Emirates": "🇦🇪", UAE: "🇦🇪", Turkey: "🇹🇷", Türkiye: "🇹🇷", Egypt: "🇪🇬", Indonesia: "🇮🇩", Malaysia: "🇲🇾", "United States": "🇺🇸", "United Kingdom": "🇬🇧", Philippines: "🇵🇭", Nigeria: "🇳🇬", Morocco: "🇲🇦", Iraq: "🇮🇶", Kuwait: "🇰🇼", Qatar: "🇶🇦", Afghanistan: "🇦🇫", Nepal: "🇳🇵", "Sri Lanka": "🇱🇰", Oman: "🇴🇲", Bahrain: "🇧🇭", Jordan: "🇯🇴", Iran: "🇮🇷", Canada: "🇨🇦", Australia: "🇦🇺" };
 const TABS: { key: TabKey; label: string; Icon: typeof Mic }[] = [
