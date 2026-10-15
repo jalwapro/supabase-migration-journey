@@ -399,6 +399,20 @@ function RoomPage() {
   }, []);
 
   const [members, setMembers] = useState<Member[]>([]);
+  // Drop members whose presence heartbeat expired, even if a DELETE event was missed.
+  useEffect(() => {
+    const pruneInactive = () => {
+      const cutoff = Date.now() - 120_000;
+      setMembers((prev) => {
+        const next = prev.filter((member) => !!member.last_seen_at && Date.parse(member.last_seen_at) >= cutoff);
+        if (next.length !== prev.length) membersRef.current = next;
+        return next;
+      });
+    };
+    const interval = window.setInterval(pruneInactive, 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
   const [cpMicPairId, setCpMicPairId] = useState<string | null>(null);
   const [cpMicPairUserIds, setCpMicPairUserIds] = useState<[string, string] | null>(null);
   const [cpSeatFrames, setCpSeatFrames] = useState<Record<string, string>>({});
@@ -700,7 +714,8 @@ function RoomPage() {
         .select(
           "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,last_seen_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
         )
-        .eq("room_id", roomId);
+        .eq("room_id", roomId)
+        .gte("last_seen_at", new Date(Date.now() - 120_000).toISOString());
       if (!withSeatedAt.error || !/seated_at/i.test(withSeatedAt.error.message)) {
         return withSeatedAt;
       }
@@ -938,7 +953,16 @@ function RoomPage() {
               && oldRow.last_seen_at !== row.last_seen_at;
             const wasActive = !!oldRow?.last_seen_at && Date.parse(oldRow.last_seen_at) > Date.now() - 120_000;
             const isActive = !!row.last_seen_at && Date.parse(row.last_seen_at) > Date.now() - 120_000;
-            if (presenceOnly && wasActive && isActive) return;
+            if (presenceOnly && wasActive && isActive) {
+              setMembers((prev) => {
+                const next = prev.map((member) => member.user_id === row.user_id
+                  ? { ...member, last_seen_at: row.last_seen_at ?? null }
+                  : member);
+                membersRef.current = next;
+                return next;
+              });
+              return;
+            }
             setMembers((prev) => {
               const next = prev.map((m) =>
                 m.user_id === row.user_id
