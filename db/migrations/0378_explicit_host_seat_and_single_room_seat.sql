@@ -67,6 +67,7 @@ CREATE TRIGGER trg_guard_single_active_voice_seat
 BEFORE INSERT OR UPDATE OF seat_index ON public.room_members
 FOR EACH ROW
 EXECUTE FUNCTION public.guard_single_active_voice_seat();
+REVOKE ALL ON FUNCTION public.guard_single_active_voice_seat() FROM PUBLIC, anon, authenticated, service_role;
 
 -- Override the room creator RPC so creating/reopening a room does not place
 -- the host on Seat 1. The route adds a null-seat membership when the host
