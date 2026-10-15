@@ -1293,7 +1293,8 @@ function RoomPage() {
 
   useEffect(() => {
     if (!user || !room.data?.id) return;
-    const seatIndex = isHost ? 1 : null;
+    // Joining only creates a viewer membership; host explicitly claims Seat 1 after entering.
+    const seatIndex = null;
     void (async () => {
       // Preserve existing seat_index on refresh — only insert a fresh row
       // when this user is not already a member of the room. An upsert with
@@ -2272,7 +2273,7 @@ onToggleMic={() => void toggleMuteWithSync()} onOpenMusic={() => { if (!isHost &
 onToggleSpeaker={agora.toggleSpeaker}
 onSeatTap={(idx) => void onSeatTap(idx)}
 onJoinSeat={(idx) => void takeSeat(idx)}
-onHostTap={() => setMiniProfileUser({ id: r.host_id, username: r.host?.username ?? "Host", avatar: r.host?.avatar ?? null })}
+onHostTap={() => { if (isHost && mySeatIndex !== 1) { void takeSeat(1); return; } setMiniProfileUser({ id: r.host_id, username: r.host?.username ?? "Host", avatar: r.host?.avatar ?? null }); }}
 onReport={async () => {
   const reason = window.prompt("Report this room?");
   if (reason && reason.trim().length >= 3) {
