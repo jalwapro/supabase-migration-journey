@@ -80,12 +80,23 @@ export function FirstLoginProfileSetup() {
     if (!country) { toast.error("Please select your country."); return; }
     setSaving(true);
     try {
-      const { error } = await supabase.from("profiles").update({
-        full_name: name.trim(),
-        country: country.name,
-        country_code: country.code,
-      }).eq("id", user.id);
+      // Save every onboarding field explicitly. Uploading a file only stores it
+      // in Storage; it does not automatically update profiles.avatar.
+      const { data: savedProfile, error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: name.trim(),
+          avatar: avatar.trim(),
+          country: country.name,
+          country_code: country.code,
+        })
+        .eq("id", user.id)
+        .select("id,full_name,avatar,country,country_code")
+        .maybeSingle();
       if (error) throw error;
+      if (!savedProfile) {
+        throw new Error("Profile was not saved. Please check your connection and try again.");
+      }
       await refresh();
       toast.success("Profile saved. Welcome to JALWA!");
     } catch (error) {
