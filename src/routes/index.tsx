@@ -56,6 +56,7 @@ export const Route = createFileRoute("/")({
 type Banner = { id: string; title: string | null; image_url: string; link_url: string | null; expires_at?: string | null };
 type Room = {
   id: string;
+  people_preview?: Array<{ user_id: string; avatar: string | null }>;
   title: string;
   cover_url: string | null;
   room_type: "voice" | "video";
@@ -188,6 +189,30 @@ function FirstHomeLoading({
   );
 }
 
+
+/** Replace cached/trigger-maintained counts with the authoritative room_members rows. */
+async function attachRoomPeople(rooms: Room[]): Promise<Room[]> {
+  if (!rooms.length) return rooms;
+  const ids = [...new Set(rooms.map((room) => room.id))];
+  const { data, error } = await supabase
+    .from("room_members")
+    .select("room_id,user_id,user:profiles!room_members_user_id_fkey(avatar)")
+    .in("room_id", ids);
+  if (error) throw error;
+  const byRoom = new Map<string, Array<{ user_id: string; avatar: string | null }>>();
+  for (const row of (data ?? []) as Array<{ room_id: string; user_id: string; user?: { avatar: string | null } | null }>) {
+    const people = byRoom.get(row.room_id) ?? [];
+    if (!people.some((person) => person.user_id === row.user_id)) {
+      people.push({ user_id: row.user_id, avatar: row.user?.avatar ?? null });
+      byRoom.set(row.room_id, people);
+    }
+  }
+  return rooms.map((room) => {
+    const people = byRoom.get(room.id) ?? [];
+    return { ...room, viewer_count: people.length, people_preview: people.slice(0, 3) };
+  });
+}
+
 function Home() {
   const { user, profile, isAdmin, loading } = useAuth();
   const unread = useUnreadCount();
@@ -212,6 +237,7 @@ function Home() {
   // Live auto-refresh: any rooms / follows / banners change → refetch instantly.
   useRealtimeInvalidate("home-live", [
     { table: "live_rooms", invalidate: [["home-top-hosts"], ["home-rooms-page"], ["home-live-users"]] },
+    { table: "room_members", invalidate: [["home-top-hosts"], ["home-rooms-page"]] },
     { table: "follows", invalidate: [["home-mutual-friends-online"]] },
     { table: "banners", invalidate: [["banners"]] },
   ]);
@@ -322,7 +348,7 @@ function Home() {
           Number(p.coin_score ?? 0),
         ]),
       );
-      return list
+      const ranked = list
         .map((r) => ({ ...r, coin_score: scoreByRoom.get(r.id) ?? 0 }))
         .sort(
           (a, b) =>
@@ -330,6 +356,7 @@ function Home() {
             b.viewer_count - a.viewer_count,
         )
         .slice(0, 2);
+      return attachRoomPeople(ranked);
     },
     refetchInterval: 90_000,
     staleTime: 60_000,
@@ -371,7 +398,7 @@ function Home() {
       if (debouncedQuery) sel = sel.ilike("title", `%${debouncedQuery}%`);
       const { data, error } = await sel;
       if (error) throw error;
-      return (data ?? []) as unknown as Room[];
+      return attachRoomPeople((data ?? []) as unknown as Room[]);
     },
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length < PAGE_SIZE ? undefined : allPages.length * PAGE_SIZE,
@@ -1053,7 +1080,8 @@ const RoomCard = memo(function RoomCard({ room, frameTone }: { room: Room; frame
         </div>
       )}
 
-      <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white ">
+      <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/65 px-2 py-0.5 text-[10px] font-bold text-white">
+        {room.people_preview && room.people_preview.length > 0 && <span className="flex -space-x-1.5">{room.people_preview.map((person) => <span key={person.user_id} className="h-4 w-4 overflow-hidden rounded-full border border-white/70 bg-violet-900">{person.avatar ? <img src={person.avatar} alt="" loading="lazy" className="h-full w-full object-cover" /> : <span className="block h-full w-full bg-white/15" />}</span>)}</span>}
         <Users className="h-2.5 w-2.5" />
         {room.viewer_count}
       </div>
@@ -1134,6 +1162,7 @@ const RoomListItem = memo(function RoomListItem({ room }: { room: Room }) {
       </div>
       <div className="flex flex-col items-end gap-1 shrink-0 text-[11px]">
         <span className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 font-bold text-white">
+          {room.people_preview && room.people_preview.length > 0 && <span className="flex -space-x-1.5">{room.people_preview.map((person) => <span key={person.user_id} className="h-4 w-4 overflow-hidden rounded-full border border-white/70 bg-violet-900">{person.avatar ? <img src={person.avatar} alt="" loading="lazy" className="h-full w-full object-cover" /> : <span className="block h-full w-full bg-white/15" />}</span>)}</span>}
           <Users className="h-2.5 w-2.5" /> {room.viewer_count}
         </span>
         {(room.coin_score ?? 0) > 0 && (
