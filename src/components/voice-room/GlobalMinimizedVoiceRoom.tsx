@@ -126,13 +126,45 @@ export function GlobalMinimizedVoiceRoom() {
   const normalizedRoomRoute = room?.roomRoute?.split('?')[0];
   const isViewingActiveRoom = !!normalizedRoomRoute && currentPath === normalizedRoomRoute;
 
+  // Keep the membership heartbeat alive while a minimized room remains active.
+  // This keeps Home's real people count accurate without keeping the room screen mounted.
+  useEffect(() => {
+    if (!user?.id || !room?.roomId || !room.isMinimized || isViewingActiveRoom) return;
+    let alive = true;
+    const touchPresence = async () => {
+      if (!alive || document.visibilityState === 'hidden') return;
+      const { error } = await supabase
+        .from('room_members')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('room_id', room.roomId)
+        .eq('user_id', user.id);
+      if (error) console.warn('[minimized room presence]', error.message);
+    };
+    void touchPresence();
+    const interval = window.setInterval(() => void touchPresence(), 45_000);
+    const onFocus = () => void touchPresence();
+    const onVisibility = () => { if (document.visibilityState === 'visible') void touchPresence(); };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('online', onFocus);
+    return () => {
+      alive = false;
+      window.clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('online', onFocus);
+    };
+  }, [user?.id, room?.roomId, room?.isMinimized, isViewingActiveRoom]);
+
   // Keep the owner's personal room heartbeat alive while they are on Home or
   // another page. The server now preserves rooms until logout / 7-day inactivity.
   useRoomHeartbeat(room?.roomId, !!user?.id && room?.userRole === 'host' && !!room?.isMinimized && !isViewingActiveRoom);
 
-  // The global control exists only while the room is minimized/recoverable.
-  // Never render it on the full active Voice Room screen.
-  if (!user || !room || isViewingActiveRoom || (activeRoom && !activeRoom.isMinimized)) return null;
+  const hasActiveSeat = seatPresence.data?.seat_index != null;
+
+  // Only a user who still owns an actual seat may see the minimized-room popup.
+  // A viewer who is merely present in the room remains counted, but gets no floating popup.
+  if (!user || !room || isViewingActiveRoom || (activeRoom && !activeRoom.isMinimized) || !seatPresence.isFetched || !hasActiveSeat) return null;
 
   const startDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     dragging.current = true;
@@ -167,11 +199,33 @@ export function GlobalMinimizedVoiceRoom() {
     toast.success('Room ended');
   };
 
-  const leaveRoom = () => {
-    clearRoom();
-    setOpen(false);
-    if (window.location.pathname.startsWith('/room/')) navigate({ to:'/' });
-    toast.success('Left Voice Room');
+  const leaveRoom = async () => {
+    if (!user?.id || !room?.roomId) return;
+    try {
+      const { data: roomRow, error: roomError } = await supabase
+        .from('live_rooms')
+        .select('host_id')
+        .eq('id', room.roomId)
+        .maybeSingle();
+      if (roomError) throw roomError;
+      if (roomRow?.host_id === user.id) {
+        const { error } = await supabase.rpc('leave_room_as_host', { _room_id: room.roomId, _end_now: false });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('room_members')
+          .delete()
+          .eq('room_id', room.roomId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      }
+      clearRoom();
+      setOpen(false);
+      await qc.invalidateQueries({ queryKey: ['global-room-recovery', user.id] });
+      toast.success('Left Voice Room');
+    } catch (error) {
+      toast.error((error as Error).message || 'Unable to leave Voice Room');
+    }
   };
 
   const toggleMic = () => {
