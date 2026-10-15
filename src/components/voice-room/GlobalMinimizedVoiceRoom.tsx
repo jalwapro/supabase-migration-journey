@@ -6,6 +6,7 @@ import { useAuth } from'@/hooks/useAuth';
 import { supabase } from'@/integrations/supabase/client';
 import { toast } from'sonner';
 import { useVoiceRoomSession } from'@/context/VoiceRoomSessionContext';
+import { useRoomHeartbeat } from'@/hooks/useRoomHeartbeat';
 
 const POSITION_KEY ='jalwa:minimized-room-position';
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
@@ -94,6 +95,8 @@ export function GlobalMinimizedVoiceRoom() {
   });
 
   const seatedAvatar = seatPresence.data?.seat_index != null ? seatPresence.data.profile?.avatar : null;
+  const seatIndex = seatPresence.data?.seat_index ?? null;
+  const isSeatedViewer = room?.userRole !== 'host' && seatIndex !== null;
 
   useEffect(() => {
     const onMove = (event: PointerEvent) => {
@@ -122,6 +125,10 @@ export function GlobalMinimizedVoiceRoom() {
   const currentPath = typeof window ==='undefined' ?'' : window.location.pathname;
   const normalizedRoomRoute = room?.roomRoute?.split('?')[0];
   const isViewingActiveRoom = !!normalizedRoomRoute && currentPath === normalizedRoomRoute;
+
+  // Keep the owner's personal room heartbeat alive while they are on Home or
+  // another page. The server now preserves rooms until logout / 7-day inactivity.
+  useRoomHeartbeat(room?.roomId, !!user?.id && room?.userRole === 'host' && !!room?.isMinimized && !isViewingActiveRoom);
 
   // The global control exists only while the room is minimized/recoverable.
   // Never render it on the full active Voice Room screen.
@@ -189,7 +196,7 @@ export function GlobalMinimizedVoiceRoom() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-bold text-white">{room.roomName ||'Voice Room'}</p>
-                <p className="text-[10px] text-emerald-300">● {room.connectionState ==='reconnecting' ?'Reconnecting' :'Room Active'}</p>
+                <p className="text-[10px] text-emerald-300">● {isSeatedViewer ? `Seat ${seatIndex} saved` : room.connectionState ==='reconnecting' ?'Reconnecting' :'Room Active'}</p>
               </div>
               <button type="button" onClick={() => setOpen(false)} className="rounded-full p-1 text-white/60" aria-label="Close room controls"><X className="h-4 w-4" /></button>
             </div>
@@ -210,7 +217,7 @@ export function GlobalMinimizedVoiceRoom() {
                   <button type="button" onClick={toggleSpeaker} className="flex flex-col items-center gap-1 rounded-xl bg-white/10 p-2 text-[9px] font-bold text-white"><Volume2 className="h-4 w-4" />Speaker</button>
                   <button type="button" onClick={leaveRoom} className="flex flex-col items-center gap-1 rounded-xl bg-rose-500/15 p-2 text-[9px] font-bold text-rose-200"><VolumeX className="h-4 w-4" />Leave</button>
                 </div>
-                <button type="button" onClick={enterRoom} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-3 py-2.5 text-xs font-black text-white"><LogIn className="h-4 w-4" />Is Room Mein Jayein</button>
+                <button type="button" onClick={enterRoom} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-3 py-2.5 text-xs font-black text-white"><LogIn className="h-4 w-4" />{isSeatedViewer ? `Seat ${seatIndex} — Room Mein Wapas Jayein` : 'Is Room Mein Jayein'}</button>
               </>
             )}
           </div>
@@ -220,7 +227,7 @@ export function GlobalMinimizedVoiceRoom() {
             <span className="absolute inset-0 bg-gradient-to-br from-[color:var(--gold)]/35 via-[color:var(--primary)]/35 to-[color:var(--secondary)]/35" />
             {seatedAvatar ? <img src={seatedAvatar} alt="" className="relative h-12 w-12 rounded-full object-cover" draggable={false} /> : <Radio className="relative h-6 w-6 text-white" />}
             <span className="absolute right-1 top-1 h-3 w-3 rounded-full border-2 border-black bg-emerald-400" />
-            <span className="absolute bottom-1 rounded-full bg-black/70 px-1 text-[7px] font-black text-white">{room.microphoneMuted ?'🔇' :'LIVE'}</span>
+            <span className="absolute bottom-1 rounded-full bg-black/80 px-1 text-[7px] font-black text-white">{isSeatedViewer ? `SEAT ${seatIndex}` : room.microphoneMuted ?'🔇' :'LIVE'}</span>
           </button>
         </div>
         <Move className="mx-auto mt-0.5 h-3 w-3 text-white/30" aria-hidden />
