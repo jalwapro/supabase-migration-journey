@@ -38,14 +38,14 @@ jobs:
       - name: Build web app
         run: bun run build
 
-      - name: Generate fresh Capacitor Android project
+      - name: Prepare existing Capacitor Android project
         shell: bash
         run: |
           mkdir -p .native-build
           if [ -f android/app/google-services.json ]; then
             cp android/app/google-services.json .native-build/google-services.json
           fi
-          npx cap add android
+          test -f android/app/src/main/AndroidManifest.xml
           if [ -f .native-build/google-services.json ]; then
             cp .native-build/google-services.json android/app/google-services.json
           fi
