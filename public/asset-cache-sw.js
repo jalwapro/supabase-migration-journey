@@ -1,5 +1,8 @@
 const CACHE_ASSETS = "jalwa-assets-v2";
 const CACHE_SHELL = "jalwa-shell-v2";
+// Keep the catalog cache created by src/lib/assetCache.ts; deleting it would
+// silently remove the gifts/frames/audio pack needed for offline use.
+const CACHE_MANIFEST = "jalwa-assets-v1";
 
 // Static assets regex: JS chunks, CSS, fonts, images, audio, video
 const MANAGED_MEDIA = /\.(mp4|webm|mov|svga|svg|png|jpe?g|gif|webp|avif|mp3|wav|ogg|m4a)(\?.*)?$/i;
@@ -48,7 +51,7 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_ASSETS && key !== CACHE_SHELL) {
+          if (key !== CACHE_ASSETS && key !== CACHE_SHELL && key !== CACHE_MANIFEST) {
             return caches.delete(key);
           }
         })
