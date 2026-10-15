@@ -8,7 +8,6 @@ import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { useState } from "react";
 
 import { toast } from "sonner";
-import { CountryFlag } from "@/components/CountryFlag";
 
 export const Route = createFileRoute("/_authenticated/friends")({
   component: Page,
@@ -100,7 +99,6 @@ function Page() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold">
                       {p.username}
-                      <CountryFlag country={p.country} countryCode={p.country_code} className="text-sm" />
                       <span className="ml-1 text-[10px] font-normal text-muted-foreground">#{String(p.id).slice(0, 4)}</span>
                     </p>
                     <p className="text-[11px] text-muted-foreground">Lv.{p.level}{p.is_vip ? " · 👑 VIP" : ""}</p>
