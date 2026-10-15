@@ -78,13 +78,29 @@ export function VoiceRoomMemberSheet({
     setBlocked(false);
   }, [member?.id]);
 
+  // Load the public profile as soon as the DP popup opens so location and
+  // the actual account level are visible without requiring another tap.
+  useEffect(() => {
+    if (!member?.id) return;
+    let active = true;
+    void supabase.rpc("get_profile_public", { _id: member.id }).maybeSingle().then(({ data, error }) => {
+      if (!active) return;
+      if (error) {
+        console.warn("member profile lookup failed", error);
+        return;
+      }
+      if (data) setProfile(data as PublicProfile);
+    });
+    return () => { active = false; };
+  }, [member?.id]);
+
   // The admin VIP Levels table is the source of truth for the popup frame.
   // A level-specific custom frame wins; otherwise the built-in level frame is used.
   useEffect(() => {
     if (!member?.id) return;
     let active = true;
     const loadLevelFrame = async () => {
-      const level = Math.max(1, Math.floor(Number(member.level ?? 0)) || 1);
+      const level = Math.max(1, Math.floor(Number(profile?.level ?? member.level ?? 0)) || 1);
       const { data } = await supabase
         .from("vip_level_config")
         .select("level,frame_url,popup_frame_url")
@@ -97,7 +113,7 @@ export function VoiceRoomMemberSheet({
     };
     void loadLevelFrame();
     return () => { active = false; };
-  }, [member?.id, member?.level]);
+  }, [member?.id, member?.level, profile?.level]);
 
   useEffect(() => {
     if (!member) return;
@@ -120,14 +136,9 @@ export function VoiceRoomMemberSheet({
 
   if (!member) return null;
 
-  const openProfile = async () => {
+  const openProfile = () => {
     onOpenProfile?.(member);
     setProfileOpen(true);
-    // Keep the sheet interactive while the full profile query runs.
-    void supabase.rpc("get_profile_public", { _id: member.id }).maybeSingle().then(({ data, error }) => {
-    if (error) { console.warn("member profile lookup failed", error); return; }
-    if (data) setProfile(data as PublicProfile);
-  });
   };
 
   const toggleFollow = async () => {
@@ -200,7 +211,8 @@ export function VoiceRoomMemberSheet({
   };
 
   const displayName = profile?.username ?? profile?.full_name ?? member.username ?? "User";
-  const displayLevel = Math.max(1, Math.floor(Number(profile?.vip_level ?? member.level ?? 0)) || 1);
+  const displayLevel = Math.max(1, Math.floor(Number(profile?.level ?? member.level ?? 0)) || 1);
+  const displayVipLevel = Math.max(0, Math.floor(Number(profile?.vip_level ?? 0)) || 0);
   const popupFrameValue = popupFrame || frameForLevel(displayLevel);
   const popupFrameUrl = resolveAssetUrl(popupFrameValue);
 
@@ -228,7 +240,8 @@ export function VoiceRoomMemberSheet({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-1.5 text-xl font-black"><span className="truncate">{displayName}</span><CountryFlag country={profile?.country} countryCode={profile?.country_code} className="text-lg" /></div>
-            <div className="mt-1 text-xs font-semibold text-white/55">VIP Level {displayLevel}</div>
+            <div className="mt-1 text-xs font-semibold text-white/65">Level {displayLevel}{displayVipLevel > 0 ? ` · VIP ${displayVipLevel}` : ""}</div>
+            {(profile?.country || profile?.city) && <div className="mt-1 flex min-w-0 items-center gap-1 text-xs text-white/55"><CountryFlag country={profile?.country} countryCode={profile?.country_code} className="text-sm" /><span className="truncate">{[profile?.city, profile?.country].filter(Boolean).join(", ")}</span></div>}
             <div className="mt-2 inline-flex w-fit items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-200">● {member.is_muted ? "Microphone muted" : "Microphone active"}</div>
           </div>
           <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10 text-lg text-white/60" aria-label="Close profile">×</button>
