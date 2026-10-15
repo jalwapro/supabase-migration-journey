@@ -213,25 +213,35 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const currentSlide = gameSlides[currentSlideIndex] || gameSlides[0];
   
   const handleSeatTapForEmoji = (seatIndex: number) => {
+    // A DP tap is a profile action only. Do not forward it to the parent seat
+    // action callback, which can trigger unrelated room-level actions.
     const seat = room.seats.find((s) => s.index === seatIndex);
-    if (seat?.user) {
-      setSelectedMember({
-        id: seat.user.id,
-        username: seat.user.username,
-        avatar: seat.user.avatar,
-        level: seat.user.level,
-        gift_score: seat.user.gift_score,
-        is_muted: seat.user.is_muted,
-      });
-    }
-    onSeatTap(seatIndex);
+    if (!seat?.user?.id) return;
+    setShowMiniInputPopup(false);
+    setSelectedMember({
+      id: seat.user.id,
+      username: seat.user.username,
+      avatar: seat.user.avatar,
+      level: seat.user.level,
+      gift_score: seat.user.gift_score,
+      is_muted: seat.user.is_muted,
+    });
   };
 
   const handleHostSeatProfileTap = () => {
-    // Viewing the host profile is allowed for every room participant.
-    // Occupying/changing the host seat remains a separate, owner-only action.
-    if (!room.host?.id) return;
-    onHostTap?.();
+    // Host DP opens the same member profile sheet; it must not invoke the
+    // external host/seat callback when the user only wants to view the profile.
+    const host = room.host;
+    if (!host?.id) return;
+    setShowMiniInputPopup(false);
+    setSelectedMember({
+      id: host.id,
+      username: host.username,
+      avatar: host.avatar,
+      level: host.level,
+      gift_score: host.gift_score ?? 0,
+      is_muted: host.is_muted,
+    });
   };
 
   return (
