@@ -190,6 +190,7 @@ type Member = {
   is_moderator?: boolean;
   joined_at?: string | null;
   seated_at?: string | null;
+  last_seen_at?: string | null;
   user: { username: string | null; avatar: string | null; country?: string | null; country_code?: string | null; frame: string | null; vip_level?: number | null } | null;
 };
 
@@ -697,7 +698,7 @@ function RoomPage() {
       const withSeatedAt = await supabase
         .from("room_members")
         .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,last_seen_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
         )
         .eq("room_id", roomId);
       if (!withSeatedAt.error || !/seated_at/i.test(withSeatedAt.error.message)) {
@@ -706,9 +707,10 @@ function RoomPage() {
       return supabase
         .from("room_members")
         .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,last_seen_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
         )
-        .eq("room_id", roomId);
+        .eq("room_id", roomId)
+        .gte("last_seen_at", new Date(Date.now() - 120_000).toISOString());
     };
 
     const [
@@ -919,10 +921,24 @@ function RoomPage() {
             is_moderator?: boolean;
             joined_at?: string | null;
             seated_at?: string | null;
+            last_seen_at?: string | null;
           };
           if (!row?.user_id) return;
+          if (row.last_seen_at && Date.parse(row.last_seen_at) < Date.now() - 120_000) return;
           // For UPDATE, merge into existing row (profile already loaded).
           if (evt === "UPDATE") {
+            const oldRow = payload.old as typeof row | undefined;
+            const presenceOnly = !!oldRow
+              && oldRow.seat_index === row.seat_index
+              && oldRow.is_muted === row.is_muted
+              && oldRow.is_video === row.is_video
+              && oldRow.is_moderator === row.is_moderator
+              && oldRow.joined_at === row.joined_at
+              && oldRow.seated_at === row.seated_at
+              && oldRow.last_seen_at !== row.last_seen_at;
+            const wasActive = !!oldRow?.last_seen_at && Date.parse(oldRow.last_seen_at) > Date.now() - 120_000;
+            const isActive = !!row.last_seen_at && Date.parse(row.last_seen_at) > Date.now() - 120_000;
+            if (presenceOnly && wasActive && isActive) return;
             setMembers((prev) => {
               const next = prev.map((m) =>
                 m.user_id === row.user_id
@@ -933,6 +949,7 @@ function RoomPage() {
                       is_video: row.is_video,
                       is_moderator: row.is_moderator ?? m.is_moderator,
                       joined_at: row.joined_at ?? m.joined_at ?? null,
+                      last_seen_at: row.last_seen_at ?? m.last_seen_at ?? null,
                       seated_at:
                         "seated_at" in row
                           ? row.seated_at ?? null
@@ -977,6 +994,7 @@ function RoomPage() {
             is_video: row.is_video,
             is_moderator: row.is_moderator,
             joined_at: row.joined_at ?? new Date().toISOString(),
+            last_seen_at: row.last_seen_at ?? null,
             seated_at: row.seated_at ?? (row.seat_index == null ? null : row.joined_at ?? new Date().toISOString()),
             user: (prof as Member["user"]) ?? null,
           };
@@ -1307,11 +1325,14 @@ function RoomPage() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (existing) return; // already in the room, keep current seat state
+      if (existing) {
+        await supabase.from("room_members").update({ last_seen_at: new Date().toISOString() }).eq("room_id", roomId).eq("user_id", user.id);
+        return; // already in the room, keep current seat state
+      }
 
       const { error: memberErr } = await supabase
         .from("room_members")
-        .insert({ room_id: roomId, user_id: user.id, seat_index: seatIndex });
+        .insert({ room_id: roomId, user_id: user.id, seat_index: seatIndex, last_seen_at: new Date().toISOString() });
       if (memberErr) {
         if (/BANNED/i.test(memberErr.message)) {
           toast.error(memberErr.message.replace(/^BANNED:\s*/i, ""));
@@ -1335,6 +1356,35 @@ function RoomPage() {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, roomId, isHost, room.data?.id]);
+
+  // Presence heartbeat: persistent membership rows alone are not proof that a user is in the room.
+  // Home and VoiceRoom counts only include members seen in the last two minutes.
+  useEffect(() => {
+    if (!user?.id || !room.data?.id) return;
+    let stopped = false;
+    const pingPresence = async () => {
+      if (stopped) return;
+      const { error } = await supabase
+        .from("room_members")
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq("room_id", roomId)
+        .eq("user_id", user.id);
+      if (error && !stopped) console.warn("[room presence heartbeat]", error.message);
+    };
+    void pingPresence();
+    const interval = window.setInterval(() => void pingPresence(), 45_000);
+    const onVisible = () => { if (document.visibilityState === "visible") void pingPresence(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    window.addEventListener("online", onVisible);
+    return () => {
+      stopped = true;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      window.removeEventListener("online", onVisible);
+    };
+  }, [user?.id, roomId, room.data?.id]);
 
   // Auto-remove membership when the user actually leaves the room
   // (route change, tab close, back button). Host is excluded — host uses
