@@ -102,11 +102,22 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
           ? await supabase.from("profiles").select("id,avatar").in("id", hostIds)
           : { data: [] as Array<{ id: string; avatar: string | null }> };
         const avatars = new Map((profiles ?? []).map((item: { id: string; avatar: string | null }) => [item.id, item.avatar]));
+        const roomIds = rows.map((item) => item.id);
+        const { data: memberRows, error: memberError } = roomIds.length
+          ? await supabase.from("room_members").select("room_id,user_id").in("room_id", roomIds)
+          : { data: [], error: null };
+        if (memberError) throw memberError;
+        const counts = new Map<string, Set<string>>();
+        for (const member of (memberRows ?? []) as Array<{ room_id: string; user_id: string }>) {
+          const people = counts.get(member.room_id) ?? new Set<string>();
+          people.add(member.user_id);
+          counts.set(member.room_id, people);
+        }
         if (active) setTopRooms(rows.map((item) => ({
           id: item.id,
           title: item.title || "Live Room",
           cover_url: item.cover_url,
-          viewer_count: Number(item.viewer_count ?? 0),
+          viewer_count: counts.get(item.id)?.size ?? 0,
           host_id: item.host_id,
           host_avatar: avatars.get(item.host_id) ?? null,
         })));
