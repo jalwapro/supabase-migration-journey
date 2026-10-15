@@ -34,20 +34,6 @@ function subscribe(
   let ch = supabase.channel(channelName);
   const pendingKeys = new Map<string, string>();
   let flushTimer: number | null = null;
-  let flushAllActive = false;
-
-  const queueAllActive = () => {
-    flushAllActive = true;
-    if (flushTimer !== null) return;
-    flushTimer = window.setTimeout(() => {
-      flushTimer = null;
-      if (!flushAllActive) return;
-      flushAllActive = false;
-      pendingKeys.clear();
-      void qc.invalidateQueries({ refetchType: "active" });
-    }, 100);
-  };
-
   const queueKeys = (keys: string[]) => {
     for (const key of keys) pendingKeys.set(key, key);
     if (flushTimer !== null) return;
@@ -87,11 +73,12 @@ function subscribe(
 
   ch.subscribe((status, error) => {
     onStatus?.(status, error);
-    if (status === "SUBSCRIBED") {
-      const allKeys = subs.flatMap((s) => s.keys ?? []);
-      if (allKeys.length) queueKeys(allKeys);
-      else queueAllActive();
-    } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+    // SUBSCRIBED only means the socket is ready; it is not a database change.
+    // Invalidating every mapped key here caused profile, wallet, and room queries
+    // to refetch whenever Android backgrounded/resumed or Realtime reconnected.
+    // Initial queries fetch on mount, and actual Postgres events invalidate their
+    // own keys through the callbacks above.
+    if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
       console.warn("[Realtime]", channelName, status, error);
     }
   });
