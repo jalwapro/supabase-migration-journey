@@ -53,13 +53,14 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
       try {
         const { data, error } = await supabase
           .from("room_members")
-          .select("user_id,user:profiles!room_members_user_id_fkey(avatar)")
+          .select("user_id,last_seen_at,user:profiles!room_members_user_id_fkey(avatar)")
           .eq("room_id", room.id)
+          .gte("last_seen_at", new Date(Date.now() - 120_000).toISOString())
           .limit(3);
         if (error) throw error;
         if (active) {
           const seen = new Set<string>();
-          setPeopleAvatars(((data ?? []) as Array<{ user_id: string; user?: { avatar: string | null } | null }>)
+          setPeopleAvatars(((data ?? []) as Array<{ user_id: string; last_seen_at: string | null; user?: { avatar: string | null } | null }>)
             .filter((row) => row.user_id && !seen.has(row.user_id) && !!seen.add(row.user_id))
             .map((row) => ({ user_id: row.user_id, avatar: row.user?.avatar ?? null })));
         }
@@ -104,11 +105,11 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
         const avatars = new Map((profiles ?? []).map((item: { id: string; avatar: string | null }) => [item.id, item.avatar]));
         const roomIds = rows.map((item) => item.id);
         const { data: memberRows, error: memberError } = roomIds.length
-          ? await supabase.from("room_members").select("room_id,user_id").in("room_id", roomIds)
+          ? await supabase.from("room_members").select("room_id,user_id,last_seen_at").in("room_id", roomIds).gte("last_seen_at", new Date(Date.now() - 120_000).toISOString())
           : { data: [], error: null };
         if (memberError) throw memberError;
         const counts = new Map<string, Set<string>>();
-        for (const member of (memberRows ?? []) as Array<{ room_id: string; user_id: string }>) {
+        for (const member of (memberRows ?? []) as Array<{ room_id: string; user_id: string; last_seen_at: string | null }>) {
           const people = counts.get(member.room_id) ?? new Set<string>();
           people.add(member.user_id);
           counts.set(member.room_id, people);
