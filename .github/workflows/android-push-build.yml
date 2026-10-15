@@ -20,7 +20,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -29,10 +28,10 @@ jobs:
           java-version: "21"
 
       - name: Install dependencies
-        run: npm install
+        run: bun install
 
       - name: Build web app
-        run: npm run build
+        run: bun run build
 
       - name: Generate fresh Capacitor Android project
         shell: bash
