@@ -2261,6 +2261,7 @@ micOn={!agora.muted}
 speakerMuted={agora.speakerMuted}
 isHost={isHost}
 mySeatIndex={mySeatIndex}
+hostSeated={members.some((member) => member.user_id === r.host_id && member.seat_index != null)}
 popularityPct={popularityPct}
 topGifterName={topGifters[0]?.username ?? null}
 topGifterCoins={topGifters[0]?.total_coins ?? 0}
