@@ -8,11 +8,12 @@ import { CountryFlag } from "@/components/CountryFlag";
 import { vipTierForLevel } from "@/lib/vip-levels";
 import { useAutoProfileCardFrame } from "@/hooks/useAutoProfileCardFrame";
 import { getCpPublicPartner } from "@/lib/cp/cpApi";
+import { CpProfileModal } from "@/components/CP/CpProfileModal";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   MessageCircle,
@@ -90,6 +91,7 @@ function UserProfilePage() {
   const nav = useNavigate();
   const qc = useQueryClient();
   const isMe = me?.id === userId;
+  const [cpModalOpen, setCpModalOpen] = useState(false);
 
   const prof = useQuery({
     queryKey: ["public-profile", userId, me?.id],
@@ -689,9 +691,10 @@ function UserProfilePage() {
 
         {/* Quick actions */}
         {!isMe && (
-          <div className={`mx-4 mt-3 grid gap-2 ${coinSeller.data ? "grid-cols-3 sm:grid-cols-5" : "grid-cols-4"}`}>
+          <div className={`mx-4 mt-3 grid gap-2 ${coinSeller.data ? "grid-cols-3 sm:grid-cols-6" : "grid-cols-5"}`}>
             <QuickAction icon={<Gift className="h-4 w-4" />} label="Gift" onClick={() => toast.info("Open gifting from a live room")} tone="gold" />
             <QuickAction icon={<Users className="h-4 w-4" />} label="Invite" onClick={() => toast.info("Invite from your live room")} tone="violet" />
+            <QuickAction icon={<Heart className="h-4 w-4" />} label="CP Invite" onClick={() => setCpModalOpen(true)} tone="pink" />
             <QuickAction icon={<Share2 className="h-4 w-4" />} label="Share" onClick={shareProfile} tone="cyan" />
             <QuickAction icon={<Heart className="h-4 w-4" />} label={followState.data ? "Liked" : "Like"} onClick={() => follow.mutate()} tone="pink" />
             {coinSeller.data && (
@@ -706,6 +709,14 @@ function UserProfilePage() {
               </a>
             )}
           </div>
+        )}
+        {!isMe && me?.id && (
+          <CpProfileModal
+            isOpen={cpModalOpen}
+            onClose={() => setCpModalOpen(false)}
+            currentUserId={me.id}
+            targetUser={{ id: p.id, username: p.username ?? p.full_name, avatar: p.avatar }}
+          />
         )}
         {isMe && coinSeller.data && (
           <div className="mx-4 mt-3">
