@@ -302,7 +302,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         localStorage.setItem("jalwa_ban_notice", JSON.stringify({ userId: user.id, email: user.email ?? "", reason: reason ?? "" }));
       } catch {}
-      void supabase.auth.signOut();
+      void endOwnedRooms(user.id).finally(() => supabase.auth.signOut());
       setSession(null);
       setProfile(null);
       setRoles([]);
