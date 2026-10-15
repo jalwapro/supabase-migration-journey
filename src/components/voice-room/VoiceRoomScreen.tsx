@@ -209,7 +209,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       setCpBadgesByUser(prev => ({ ...prev, ...next }));
     });
   }, [cpUserIds]);
-  const openMemberProfile = (seatIndex: number) => { const seat = room.seats.find(s => s.index === seatIndex); if (!seat?.user) return; setMiniDraft(`@${seat.user.username} `); setShowMiniInputPopup(true); setSelectedMember({ id: seat.user.id, username: seat.user.username, avatar: seat.user.avatar, level: seat.user.level, gift_score: seat.user.gift_score, is_muted: seat.user.is_muted }); };
+  const openMemberProfile = (seatIndex: number) => { const seat = room.seats.find(s => s.index === seatIndex); if (!seat?.user) return; setShowMiniInputPopup(false); setSelectedMember({ id: seat.user.id, username: seat.user.username, avatar: seat.user.avatar, level: seat.user.level, gift_score: seat.user.gift_score, is_muted: seat.user.is_muted }); };
   const currentSlide = gameSlides[currentSlideIndex] || gameSlides[0];
   
   const handleSeatTapForEmoji = (seatIndex: number) => {
