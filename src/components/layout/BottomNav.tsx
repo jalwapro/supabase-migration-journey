@@ -1,9 +1,10 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Home, Trophy, Plus, MessageCircle, User, Compass, Radio, Wallet, Gift, Search, Bell, Settings, Users, Sparkles, CircleHelp } from "lucide-react";
 import { type ComponentType, type CSSProperties, useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { DEFAULT_NAVIGATION, loadPublishedNavigation } from "@/lib/app-customization/navigation-runtime";
 import type { NavigationItemConfig } from "@/lib/app-customization/navigation-manager";
@@ -42,7 +43,40 @@ function useUnreadDm() {
 /** Production navigation: published App Studio config with the original navigation as a safe fallback. */
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
   const { data: unread = 0 } = useUnreadDm();
+  const myRoomQuery = useQuery({
+    queryKey: ["my-host-room", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_my_recoverable_room");
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : data ? [data] : [];
+      return (rows[0] ?? null) as { id: string; title: string | null; status: string } | null;
+    },
+    staleTime: 15_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const myRoom = myRoomQuery.data ?? null;
+
+  const handlePrimaryClick = async (route: string, isRoomAction: boolean) => {
+    if (!isRoomAction || !myRoom) {
+      navigate({ to: route as never });
+      return;
+    }
+    if (myRoom.status === "host_disconnected") {
+      const { error } = await supabase.rpc("reclaim_room", { _room_id: myRoom.id });
+      if (error) {
+        toast.error("Unable to reopen your room: " + error.message);
+        return;
+      }
+    }
+    await queryClient.invalidateQueries({ queryKey: ["my-host-room", user?.id] });
+    navigate({ to: "/room/$roomId", params: { roomId: myRoom.id } });
+  };
   const [tabs, setTabs] = useState<NavigationItemConfig[]>(DEFAULT_NAVIGATION);
 
   useEffect(() => {
@@ -70,7 +104,9 @@ export function BottomNav() {
           const to = item.route ?? "/";
           const active = to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(`${to}/`);
           const primary = item.action?.type === "primary" || item.id === "create-room";
-          const Icon = getIcon(active ? (item.activeIcon ?? item.icon) : item.icon);
+          const isRoomAction = item.id === "create-room" || to === "/create-room";
+          const hasOwnedRoom = isRoomAction && !!myRoom;
+          const Icon = getIcon(hasOwnedRoom ? "Radio" : active ? (item.activeIcon ?? item.icon) : item.icon);
           const showBadge = to === "/messages" && unread > 0;
           const iconSize = item.iconSize ?? (primary ? 24 : 20);
           const labelSize = item.labelSize ?? 10;
@@ -78,9 +114,9 @@ export function BottomNav() {
           if (primary) {
             return (
               <li key={item.id} className="flex justify-center">
-                <Link to={to} aria-label={item.label || item.id} className="grid h-14 w-14 -translate-y-3 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground shadow-[0_10px_30px_-10px_color-mix(in_oklab,var(--primary)_60%,transparent)] active:scale-95 transition">
+                <button type="button" onClick={() => void handlePrimaryClick(to, isRoomAction)} aria-label={hasOwnedRoom ? "Open My Voice Room" : item.label || item.id} title={hasOwnedRoom ? "Open My Voice Room" : "Create Voice Room"} className="grid h-14 w-14 -translate-y-3 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground shadow-[0_10px_30px_-10px_color-mix(in_oklab,var(--primary)_60%,transparent)] active:scale-95 transition">
                   <Icon style={{ width: iconSize, height: iconSize }} />
-                </Link>
+                </button>
               </li>
             );
           }
