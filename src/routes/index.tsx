@@ -196,11 +196,12 @@ async function attachRoomPeople(rooms: Room[]): Promise<Room[]> {
   const ids = [...new Set(rooms.map((room) => room.id))];
   const { data, error } = await supabase
     .from("room_members")
-    .select("room_id,user_id,user:profiles!room_members_user_id_fkey(avatar)")
-    .in("room_id", ids);
+    .select("room_id,user_id,last_seen_at,user:profiles!room_members_user_id_fkey(avatar)")
+    .in("room_id", ids)
+    .gte("last_seen_at", new Date(Date.now() - 120_000).toISOString());
   if (error) throw error;
   const byRoom = new Map<string, Array<{ user_id: string; avatar: string | null }>>();
-  for (const row of (data ?? []) as Array<{ room_id: string; user_id: string; user?: { avatar: string | null } | null }>) {
+  for (const row of (data ?? []) as Array<{ room_id: string; user_id: string; last_seen_at: string | null; user?: { avatar: string | null } | null }>) {
     const people = byRoom.get(row.room_id) ?? [];
     if (!people.some((person) => person.user_id === row.user_id)) {
       people.push({ user_id: row.user_id, avatar: row.user?.avatar ?? null });
@@ -237,7 +238,7 @@ function Home() {
   // Live auto-refresh: any rooms / follows / banners change → refetch instantly.
   useRealtimeInvalidate("home-live", [
     { table: "live_rooms", invalidate: [["home-top-hosts"], ["home-rooms-page"], ["home-live-users"]] },
-    { table: "room_members", invalidate: [["home-top-hosts"], ["home-rooms-page"]] },
+    { table: "room_members", events: ["INSERT", "DELETE"], invalidate: [["home-top-hosts"], ["home-rooms-page"]] },
     { table: "follows", invalidate: [["home-mutual-friends-online"]] },
     { table: "banners", invalidate: [["banners"]] },
   ]);
