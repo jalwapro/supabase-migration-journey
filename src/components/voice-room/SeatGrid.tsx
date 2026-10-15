@@ -129,9 +129,10 @@ interface SeatGridProps {
   onSeatTap?: (index: number) => void;
   onJoinSeat?: (index: number) => void;
   onHostTap?: () => void;
+  hostSeated?: boolean;
 }
 
-export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
+export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSeatTap, onJoinSeat, onHostTap, hostSeated = false }: SeatGridProps) {
   const capacity = normalizeCapacity(seatCount);
   const [requests, setRequests] = useState<SeatRequest[]>([]);
   const [busyRequest, setBusyRequest] = useState<string | null>(null);
@@ -365,6 +366,11 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       onSeatTap?.(idx);
       return;
     }
+    // Seat 1 stays visibly empty until the verified room owner explicitly claims it.
+    if (idx === 1 && isHost) {
+      onJoinSeat?.(1);
+      return;
+    }
     if (canManageSeats) {
       setSelectedEmptySeat(seat);
       return;
@@ -410,9 +416,12 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   };
 
   const safeHostSeatIndex = Math.min(capacity, Math.max(1, hostSeatIndex));
-  const allSeats: (RoomSeat & { isHost?: boolean })[] = Array.from({ length: capacity }, (_, offset) => {
+  const allSeats: (RoomSeat & { isHost?: boolean; isHostSeat?: boolean })[] = Array.from({ length: capacity }, (_, offset) => {
     const index = offset + 1;
     if (index === safeHostSeatIndex) {
+      if (!hostSeated) {
+        return { index, seatNumber: index, isHostSeat: true, user: null, is_locked: false, is_requested: false };
+      }
       return {
         index,
         seatNumber: index,
