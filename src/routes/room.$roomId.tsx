@@ -156,6 +156,7 @@ type Room = {
   viewer_count: number;
   seat_count: number;
   host_id: string;
+  host_last_seen_at?: string | null;
   rtc_channel: string;
   locked_seats: number[] | null;
   milestone_awarded_at?: string | null;
@@ -574,7 +575,7 @@ function RoomPage() {
     queryKey: ["room", roomId],
     queryFn: async () => {
       const baseCols =
-        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,rtc_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,country,country_code,city,frame,vip_level,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
+        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,host_last_seen_at,rtc_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,country,country_code,city,frame,vip_level,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
       // Try with milestone + pk columns; fall back if migration not applied yet.
       let { data, error } = (await supabase
         .from("live_rooms")
@@ -2387,7 +2388,7 @@ style={roomStyle}
 room={mappedRoomState}
 roomId={roomId}
 roomCode={roomCode}
-onlineCount={members.length}
+onlineCount={members.length + (room.data?.host_last_seen_at && Date.parse(room.data.host_last_seen_at) >= Date.now() - 120_000 && !members.some((member) => member.user_id === room.data?.host_id) ? 1 : 0)}
 seatCount={r.seat_count}
 micOn={!agora.muted}
 speakerMuted={agora.speakerMuted}
