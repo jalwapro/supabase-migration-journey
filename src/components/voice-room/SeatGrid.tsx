@@ -3,7 +3,6 @@ import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Settings, Crown } from "luc
 import { cn } from "@/lib/utils";
 import { HostCard } from "./HostCard";
 import { LevelAvatar } from "@/components/LevelAvatar";
-import { CountryFlag } from "@/components/CountryFlag";
 import { CpSeatAura } from "@/components/CP/CpSeatAura";
 import { CpStageConnectionOverlay } from "@/components/CP/CpStageConnectionOverlay";
 import { supabase } from "@/integrations/supabase/client";
@@ -111,7 +110,6 @@ export function Seat({ seat, onClick, profileMedia = null, partnerPresentOnStage
         </span>
         <span className="flex w-full items-center justify-center gap-0.5 truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">
           <span className="truncate">{username}</span>
-          <CountryFlag country={profileMedia?.country} countryCode={profileMedia?.country_code} className="text-[10px]" />
         </span>
         <span className="flex items-center gap-0.5 text-[8px] font-medium text-white">
           <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />
@@ -540,7 +538,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
                   </span>
                   <span className="flex w-full items-center justify-center gap-0.5 truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow">
                     <span className="truncate">{host.username}</span>
-                    <CountryFlag country={(host as { country?: string | null }).country} countryCode={(host as { country_code?: string | null }).country_code} className="text-[10px]" />
                   </span>
                   <span className="flex items-center gap-0.5 text-[8px] font-medium text-white">
                     <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />
