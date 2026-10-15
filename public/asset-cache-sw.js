@@ -84,7 +84,14 @@ self.addEventListener("fetch", (event) => {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_SHELL);
       try {
-        const response = await fetch(request);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        let response;
+        try {
+          response = await fetch(request, { signal: controller.signal });
+        } finally {
+          clearTimeout(timeoutId);
+        }
         if (response.ok && response.type !== "opaque") {
           event.waitUntil((async () => {
             try {
@@ -117,8 +124,12 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       (async () => {
         try {
-          const cache = await caches.open(CACHE_ASSETS);
-          const cached = await cache.match(new Request(request.url, { method: "GET" }));
+          // The manifest warmup stores full assets in CACHE_MANIFEST. Check it
+          // before the runtime cache so preloaded media also works offline.
+          const manifestCache = await caches.open(CACHE_MANIFEST);
+          const runtimeCache = await caches.open(CACHE_ASSETS);
+          const key = new Request(request.url, { method: "GET" });
+          const cached = (await manifestCache.match(key)) || (await runtimeCache.match(key));
           if (!cached || cached.status !== 200) return fetch(request);
 
           const range = request.headers.get("range") || "";
@@ -169,6 +180,11 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       (async () => {
         const cache = await caches.open(CACHE_SHELL);
+        // Assets pre-downloaded by the catalog are authoritative local copies.
+        // Return them directly; don't trigger a second network download.
+        const manifestHit = await manifestCache.match(request);
+        if (manifestHit) return manifestHit;
+
         const hit = await cache.match(request);
         if (hit) return hit;
 
@@ -194,6 +210,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       (async () => {
         const cache = await caches.open(CACHE_ASSETS);
+        const manifestCache = await caches.open(CACHE_MANIFEST);
 
         if (forceRefresh) {
           try {
