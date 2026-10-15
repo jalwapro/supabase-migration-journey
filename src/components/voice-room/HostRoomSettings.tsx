@@ -13,6 +13,7 @@ type RoomSettings = {
   music_enabled?: boolean;
   seat_count?: number;
   stage_locked?: boolean;
+  seat_approval_required: boolean;
   room_pin?: string | null;
 };
 
@@ -27,7 +28,7 @@ type Props = {
   onToggleMic?: () => void;
 };
 
-const defaults: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true, music_enabled: true, seat_count: 8, stage_locked: false, room_pin: null };
+const defaults: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true, music_enabled: true, seat_count: 8, stage_locked: false, seat_approval_required: false, room_pin: null };
 
 type ActiveView ="main" |"kick" |"block" |"moderators";
 type ManagementMode ="kick" |"block" |"moderators" | null;
@@ -43,7 +44,7 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("live_rooms").select("is_locked,chat_enabled,gifts_enabled,guest_mic_enabled,seat_count,room_pin").eq("id", roomId).maybeSingle();
+    const { data, error } = await supabase.from("live_rooms").select("is_locked,chat_enabled,gifts_enabled,guest_mic_enabled,seat_count,room_pin,seat_approval_required").eq("id", roomId).maybeSingle();
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     if (data) {
@@ -76,6 +77,16 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
       setSaving(null);
       if (error) { toast.error(error.message); return; }
       const next = { ...settings, seat_count: Number(value) }; setSettings(next); onSettingsChange?.(next); toast.success(`Seat capacity updated to ${value}`); return;
+    }
+
+    if (key ==="seat_approval_required") {
+      const { error } = await supabase.rpc("host_set_seat_approval_mode", { _room_id: roomId, _required: Boolean(value) });
+      setSaving(null);
+      if (error) { toast.error(error.message || "Could not update seat mode"); return; }
+      const next = { ...settings, seat_approval_required: Boolean(value) };
+      setSettings(next); onSettingsChange?.(next);
+      toast.success(value ? "Seat Lock enabled — requests need approval" : "Seat Open enabled — users can join free seats");
+      return;
     }
 
     if (key ==="music_enabled") {
@@ -198,7 +209,7 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
 
               <div><div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-white/50">Quick Actions</div><div className="grid grid-cols-4 gap-1.5 text-center"><ActionButton icon={<VolumeX className="h-3.5 w-3.5 text-red-300" />} label="Mute All" onClick={() => void handleAction("mute_all")} busy={saving ==="mute_all"} /><ActionButton icon={<ShieldAlert className="h-3.5 w-3.5 text-amber-300" />} label="Unmute All" onClick={() => void handleAction("clear_hands")} busy={saving ==="clear_hands"} /><ActionButton icon={<Music className="h-3.5 w-3.5 text-pink-300" />} label="Music" onClick={() => { onClose(); onOpenMusic?.(); }} /><ActionButton icon={<Ban className="h-3.5 w-3.5 text-rose-400" />} label="Kick" onClick={() => void handleAction("kick_room")} busy={saving ==="kick_room"} /><ActionButton icon={<Shield className="h-3.5 w-3.5 text-blue-300" />} label="Block" onClick={() => void handleAction("block_list")} /><ActionButton icon={<Star className="h-3.5 w-3.5 text-purple-300" />} label="Co-Hosts" onClick={() => void handleAction("co_hosts")} /></div></div>
 
-              <div className="space-y-1"><div className="text-[9px] font-bold uppercase tracking-wider text-white/50">Preferences</div><div className="grid grid-cols-3 gap-1.5"><ToggleMini icon={settings.is_locked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />} label="Lock" value={settings.is_locked} busy={saving ==="is_locked"} onToggle={v => void update("is_locked", v)} /><ToggleMini icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chat" value={settings.chat_enabled} busy={saving ==="chat_enabled"} onToggle={v => void update("chat_enabled", v)} /><ToggleMini icon={<Mic className="h-3.5 w-3.5" />} label="Mic" value={settings.guest_mic_enabled} busy={saving ==="guest_mic_enabled"} onToggle={v => void update("guest_mic_enabled", v)} /><ToggleMini icon={<Gift className="h-3.5 w-3.5" />} label="Gifts" value={settings.gifts_enabled} busy={saving ==="gifts_enabled"} onToggle={v => void update("gifts_enabled", v)} /></div></div>
+              <div className="space-y-1"><div className="text-[9px] font-bold uppercase tracking-wider text-white/50">Preferences</div><div className="grid grid-cols-3 gap-1.5"><ToggleMini icon={settings.is_locked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />} label="Lock" value={settings.is_locked} busy={saving ==="is_locked"} onToggle={v => void update("is_locked", v)} /><ToggleMini icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chat" value={settings.chat_enabled} busy={saving ==="chat_enabled"} onToggle={v => void update("chat_enabled", v)} /><ToggleMini icon={<Mic className="h-3.5 w-3.5" />} label="Mic" value={settings.guest_mic_enabled} busy={saving ==="guest_mic_enabled"} onToggle={v => void update("guest_mic_enabled", v)} /><ToggleMini icon={<Gift className="h-3.5 w-3.5" />} label="Gifts" value={settings.gifts_enabled} busy={saving ==="gifts_enabled"} onToggle={v => void update("gifts_enabled", v)} /><ToggleMini icon={settings.seat_approval_required ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />} label="Seats" value={settings.seat_approval_required} busy={saving ==="seat_approval_required"} onToggle={v => void update("seat_approval_required", v)} /></div><p className="mt-1 text-[9px] text-white/45">Seats: {settings.seat_approval_required ? "Locked — approval required" : "Open — anyone can join a free seat"}</p></div>
             </> : <div className="flex flex-col items-center justify-center h-full py-6 text-center text-white/60">{activeView ==="kick" && <div className="space-y-2"><Ban className="h-8 w-8 text-rose-400 mx-auto animate-pulse" /><p className="text-[11px] font-bold text-white">Select a participant from seats to kick</p><p className="text-[9px] text-white/40">Tap any user profile on stage to remove them.</p></div>}{activeView ==="block" && <div className="space-y-2"><Shield className="h-8 w-8 text-blue-400 mx-auto" /><p className="text-[11px] font-bold text-white">No blocked users found</p><p className="text-[9px] text-white/40">Banned or blocked accounts will appear here.</p></div>}{activeView ==="moderators" && <div className="space-y-2"><Star className="h-8 w-8 text-purple-400 mx-auto" /><p className="text-[11px] font-bold text-white">Promote Room Members</p><p className="text-[9px] text-white/40">Assign moderators to help manage this room.</p></div>}</div>}
           </div>
 
@@ -212,7 +223,7 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
   );
 }
 
-const labels: Record<string, string> = { is_locked:"Room lock", chat_enabled:"Chat", gifts_enabled:"Gifts", guest_mic_enabled:"Guest mic", seat_count:"Seat capacity" };
+const labels: Record<string, string> = { is_locked:"Room lock", chat_enabled:"Chat", gifts_enabled:"Gifts", guest_mic_enabled:"Guest mic", seat_count:"Seat capacity", seat_approval_required:"Seat approval" };
 
 function ActionButton({ icon, label, onClick, busy }: { icon: React.ReactNode; label: string; onClick: () => void; busy?: boolean }) {
   return <button type="button" disabled={busy} onClick={onClick} className="group flex flex-col items-center justify-center gap-1 p-1.5 rounded-xl bg-gradient-to-b from-white/15 to-white/5 border border-white/20 shadow-[0_3px_8px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] active:translate-y-0.5 transition-all disabled:opacity-50"><div className="grid h-6 w-6 place-items-center rounded-lg bg-black/30 shadow-inner">{busy ? <RefreshCw className="h-3 w-3 animate-spin text-white" /> : icon}</div><span className="text-[9px] font-bold tracking-tight text-white/90 truncate w-full">{label}</span></button>;

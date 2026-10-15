@@ -142,6 +142,8 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const [selectedEmptySeat, setSelectedEmptySeat] = useState<RoomSeat | null>(null);
   const [roomViewers, setRoomViewers] = useState<RoomViewer[]>([]);
   const [hostSeatIndex, setHostSeatIndex] = useState(1);
+  const [seatApprovalRequired, setSeatApprovalRequired] = useState(false);
+  const [requestingSeat, setRequestingSeat] = useState<number | null>(null);
 
   // Load all seated users' frame/ring/level/country metadata in one batch.
   const seatUserIds = [...new Set([host.id, ...seats.map((seat) => seat.user?.id).filter((id): id is string => !!id)])].sort().join(",");
@@ -234,7 +236,24 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const canManageSeats = isHost || (isModerator && moderatorCanManageSeats);
 
   useEffect(() => {
-    if (!roomId || !isHost) { setRequests([]); return; }
+    if (!roomId) { setSeatApprovalRequired(false); return; }
+    let active = true;
+    const loadSeatMode = async () => {
+      const { data, error } = await supabase.from("live_rooms").select("seat_approval_required").eq("id", roomId).maybeSingle();
+      if (active && !error && data) setSeatApprovalRequired(data.seat_approval_required === true);
+    };
+    void loadSeatMode();
+    const channel = supabase.channel(`seat-approval-mode-${roomId}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "live_rooms", filter: `id=eq.${roomId}` }, payload => {
+        const value = (payload.new as { seat_approval_required?: boolean }).seat_approval_required;
+        if (typeof value === "boolean") setSeatApprovalRequired(value);
+      })
+      .subscribe();
+    return () => { active = false; void supabase.removeChannel(channel); };
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!roomId || (!isHost && !(isModerator && moderatorCanManageSeats))) { setRequests([]); return; }
     let active = true;
     const loadRequests = async () => {
       const { data, error } = await supabase.from("seat_requests").select("id,from_user,seat_index,created_at,status").eq("room_id", roomId).eq("status", "pending").order("created_at", { ascending: true });
@@ -262,7 +281,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "seat_requests", filter: `room_id=eq.${roomId}` }, payload => setRequests(prev => prev.filter(r => r.id !== (payload.old as any).id)))
       .subscribe();
     return () => { active = false; void supabase.removeChannel(channel); };
-  }, [roomId, isHost]);
+  }, [roomId, isHost, isModerator, moderatorCanManageSeats]);
 
   useEffect(() => {
     if (!roomId || !selectedEmptySeat) return;
@@ -401,6 +420,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       toast.error("Seat is locked");
       return;
     }
+    if (requestingSeat === idx) return;
     if (!roomId) {
       onJoinSeat?.(idx);
       return;
@@ -409,6 +429,18 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError || !authData.user) {
       toast.error("Your login session is not ready. Please sign in again.");
+      return;
+    }
+
+    if (seatApprovalRequired) {
+      setRequestingSeat(idx);
+      const { error } = await supabase.rpc("request_seat", { _room_id: roomId, _seat_index: idx });
+      setRequestingSeat(null);
+      if (error) {
+        toast.error(error.message || "Could not request this seat");
+        return;
+      }
+      toast.success("Seat request sent. Host or an authorized moderator must approve it.");
       return;
     }
 
@@ -596,7 +628,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
         </div>
       )}
 
-      {isHost && requests.length > 0 && (
+      {canManageSeats && requests.length > 0 && (
         <div className="pointer-events-auto absolute left-3 right-3 top-1 z-[80] max-h-[42%] overflow-y-auto rounded-2xl border border-amber-500 bg-[#120a1f] p-2 shadow-2xl">
           <div className="mb-2 flex items-center justify-between px-1"><div><span className="text-sm font-black text-white">Seat Requests</span><div className="text-[9px] text-white/50">Approve or reject pending requests</div></div><span className="rounded-full bg-amber-400/15 px-2 py-1 text-[9px] font-bold text-amber-300">{requests.length} pending</span></div>
           <div className="space-y-1.5">{requests.map(request => <div key={request.id} className="flex items-center gap-2 rounded-xl border border-amber-500/50 bg-[#1e1238] p-1.5">{request.avatar ? <img src={request.avatar} alt={request.username} className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-amber-500" /> : <div className="grid h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-black">{request.username[0]?.toUpperCase()}</div>}<div className="min-w-0 flex-1"><div className="flex items-center gap-1 truncate text-[11px] font-bold text-white">{request.username}</div><div className="truncate text-[9px] text-white/50">Wants to join a seat</div><div className="text-[9px] text-white">Requesting Seat {request.seat_index ?? "any"}</div></div><button type="button" disabled={busyRequest === request.id} onClick={() => void respond(request, true)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white disabled:opacity-50" aria-label={`Accept ${request.username}'s seat request`}><Check className="h-4 w-4" /></button><button type="button" disabled={busyRequest === request.id} onClick={() => void respond(request, false)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-red-500 text-white disabled:opacity-50" aria-label={`Reject ${request.username}'s seat request`}><X className="h-4 w-4" /></button></div>)}</div>
