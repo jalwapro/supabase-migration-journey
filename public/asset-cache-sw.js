@@ -1,8 +1,6 @@
-const CACHE_ASSETS = "jalwa-assets-v2";
+const CACHE_ASSETS = "jalwa-assets-v1"; // Must match src/lib/assetCache.ts
+const CACHE_LEGACY_ASSETS = "jalwa-assets-v2"; // Preserve assets cached by older workers
 const CACHE_SHELL = "jalwa-shell-v2";
-// Keep the catalog cache created by src/lib/assetCache.ts; deleting it would
-// silently remove the gifts/frames/audio pack needed for offline use.
-const CACHE_MANIFEST = "jalwa-assets-v1";
 
 // Static assets regex: JS chunks, CSS, fonts, images, audio, video
 const MANAGED_MEDIA = /\.(mp4|webm|mov|svga|svg|png|jpe?g|gif|webp|avif|mp3|wav|ogg|m4a)(\?.*)?$/i;
@@ -51,7 +49,7 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_ASSETS && key !== CACHE_SHELL && key !== CACHE_MANIFEST) {
+          if (key !== CACHE_ASSETS && key !== CACHE_LEGACY_ASSETS && key !== CACHE_SHELL) {
             return caches.delete(key);
           }
         })
@@ -118,7 +116,12 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         try {
           const cache = await caches.open(CACHE_ASSETS);
-          const cached = await cache.match(new Request(request.url, { method: "GET" }));
+          const cacheKey = new Request(request.url, { method: "GET" });
+          let cached = await cache.match(cacheKey);
+          if (!cached) {
+            // Older app versions cached media in v2; keep it playable during migration.
+            cached = await (await caches.open(CACHE_LEGACY_ASSETS)).match(cacheKey);
+          }
           if (!cached || cached.status !== 200) return fetch(request);
 
           const range = request.headers.get("range") || "";
@@ -203,12 +206,20 @@ self.addEventListener("fetch", (event) => {
             }
             return response;
           } catch {
-            return (await cache.match(request)) || Response.error();
+            const hit = await cache.match(request);
+            if (hit) return hit;
+            return (await (await caches.open(CACHE_LEGACY_ASSETS)).match(request)) || Response.error();
           }
         }
 
         const hit = await cache.match(request);
         if (hit) return hit;
+        const legacyHit = await (await caches.open(CACHE_LEGACY_ASSETS)).match(request);
+        if (legacyHit) {
+          // Promote legacy entries so subsequent requests use the unified cache.
+          event.waitUntil(cache.put(request, legacyHit.clone()).catch(() => undefined));
+          return legacyHit;
+        }
 
         try {
           const response = await fetch(request);
