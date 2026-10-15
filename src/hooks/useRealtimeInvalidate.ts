@@ -7,6 +7,8 @@ type Sub = {
   table: string;
   /** optional postgres filter like `host_id=eq.<uid>` */
   filter?: string;
+  /** Subscribe only to selected row changes; defaults to all events. */
+  events?: Array<"INSERT" | "UPDATE" | "DELETE">;
   /** query keys to invalidate on any change */
   invalidate: (string | (string | number | null | undefined)[])[];
 };
@@ -35,18 +37,20 @@ export function useRealtimeInvalidate(channelName: string, subs: Sub[]) {
       }, 75);
     };
     for (const s of subs) {
-      ch = (ch as unknown as {
-        on: (
-          type: string,
-          cfg: Record<string, unknown>,
-          cb: () => void,
-        ) => typeof ch;
-      }).on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: s.table, ...(s.filter ? { filter: s.filter } : {}) },
-
-        () => queueInvalidate(s.invalidate),
-      );
+      const eventTypes = s.events?.length ? s.events : ["*"];
+      for (const event of eventTypes) {
+        ch = (ch as unknown as {
+          on: (
+            type: string,
+            cfg: Record<string, unknown>,
+            cb: () => void,
+          ) => typeof ch;
+        }).on(
+          "postgres_changes",
+          { event, schema: "public", table: s.table, ...(s.filter ? { filter: s.filter } : {}) },
+          () => queueInvalidate(s.invalidate),
+        );
+      }
     }
     ch.subscribe((status, error) => {
       // Do not invalidate the whole page just because its realtime socket connected.
