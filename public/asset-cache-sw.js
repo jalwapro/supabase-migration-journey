@@ -7,6 +7,43 @@ const MANAGED_CODE = /\.(js|css|woff2?|ttf|otf)(\?.*)?$/i;
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
+  // Seed an offline-capable app shell during the first successful online install.
+  // This is best-effort: the worker must still install if the network is unavailable.
+  event.waitUntil((async () => {
+    try {
+      const shellCache = await caches.open(CACHE_SHELL);
+      const shellUrl = new URL("/", self.location.origin).toString();
+      const response = await fetch(shellUrl, { cache: "no-store", credentials: "same-origin" });
+      if (!response.ok || response.type === "opaque") return;
+      const html = await response.clone().text();
+      await shellCache.put(shellUrl, new Response(html, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      }));
+
+      // Cache JS/CSS referenced by the first Home HTML for the next offline launch.
+      const assetUrls = new Set();
+      const assetPattern = /(?:src|href)=["']([^"'#]+\.(?:js|css)(?:\?[^"']*)?)["']/gi;
+      let match;
+      while ((match = assetPattern.exec(html)) !== null) {
+        try {
+          const assetUrl = new URL(match[1], shellUrl);
+          if (assetUrl.origin === self.location.origin && /\.(js|css)(\?|$)/i.test(assetUrl.href)) {
+            assetUrls.add(assetUrl.toString());
+          }
+        } catch {}
+      }
+      await Promise.all([...assetUrls].map(async (assetUrl) => {
+        try {
+          const assetResponse = await fetch(assetUrl, { credentials: "same-origin" });
+          if (assetResponse.ok && assetResponse.type !== "opaque") {
+            await shellCache.put(assetUrl, assetResponse);
+          }
+        } catch {}
+      }));
+    } catch {}
+  })());
 });
 
 self.addEventListener("activate", (event) => {
@@ -40,6 +77,37 @@ self.addEventListener("fetch", (event) => {
     url.hostname.includes("supabase.co") ||
     url.hostname.includes("livekit")
   ) {
+    return;
+  }
+
+  // 0. App navigation -> network-first, then the last cached page/Home shell.
+  if (request.mode === "navigate") {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_SHELL);
+      try {
+        const response = await fetch(request);
+        if (response.ok && response.type !== "opaque") {
+          event.waitUntil((async () => {
+            try {
+              await cache.put(request, response.clone());
+              if (url.origin === self.location.origin && url.pathname === "/") {
+                await cache.put(new URL("/", self.location.origin).toString(), response.clone());
+              }
+            } catch {}
+          })());
+        }
+        return response;
+      } catch {
+        const exact = await cache.match(request);
+        if (exact) return exact;
+        const home = await cache.match(new URL("/", self.location.origin).toString());
+        if (home) return home;
+        return new Response(
+          "<!doctype html><html><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"theme-color\" content=\"#1a0d2e\"><title>JALWA Offline</title></head><body style=\"margin:0;background:#100819;color:white;font:16px system-ui;display:grid;min-height:100vh;place-items:center;text-align:center\"><main style=\"padding:24px\"><h1>JALWA</h1><p>Open JALWA once with internet to prepare offline files, then try again.</p><button onclick=\"location.reload()\" style=\"padding:12px 20px;border:0;border-radius:12px\">Retry</button></main></body></html>",
+          { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
+        );
+      }
+    })());
     return;
   }
 
