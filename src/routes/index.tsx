@@ -8,7 +8,6 @@ import { useUnreadCount } from "@/hooks/useNotifications";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { DailySpinPopup } from "@/components/DailySpinPopup";
 import { formatCompact } from "@/lib/utils";
-import { CountryFlag } from "@/components/CountryFlag";
 import { getAssetCacheProgress, subscribeAssetCacheProgress, type AssetCacheProgress } from "@/lib/assetCache";
 
 import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
@@ -597,7 +596,7 @@ function Home() {
                       <div className="min-w-0 flex-1">
                         <p className="flex min-w-0 items-center gap-1.5 truncate text-sm font-semibold">
                           <span className="truncate">{u.full_name ?? u.username ?? "User"}</span>
-                          <CountryFlag country={u.country} countryCode={u.country_code} />
+                          
                         </p>
                         <p className="truncate text-[11px] text-muted-foreground">
                           {u.username ?? "user"}
@@ -728,7 +727,7 @@ function Home() {
                   </span>
                   <span className="flex w-full items-center justify-center gap-1 truncate text-center text-[10px] text-foreground/80">
                     <span className="truncate">{u.username ?? "user"}</span>
-                    <CountryFlag country={u.country} countryCode={u.country_code} className="text-[12px]" />
+                    
                   </span>
                 </Link>
               ))}
@@ -1080,7 +1079,7 @@ const RoomCard = memo(function RoomCard({ room, frameTone }: { room: Room; frame
           </span>
           <span className="flex min-w-0 items-center gap-0.5 text-[10px] font-semibold text-white/90">
             <TypeIcon className="h-3 w-3 shrink-0" />
-            <span className="truncate">{room.host?.username ?? "host"}</span>{(room.host?.country || room.host?.country_code) && <span className="shrink-0" title={room.host.country ?? room.host.country_code ?? "Country"}>{flagForCountry(room.host.country, room.host.country_code)}</span>}
+            <span className="truncate">{room.host?.username ?? "host"}</span>
           </span>
         </div>
         <h3 className="line-clamp-2 text-xs font-black text-white drop-shadow">
@@ -1126,7 +1125,7 @@ const RoomListItem = memo(function RoomListItem({ room }: { room: Room }) {
         <h3 className="line-clamp-1 text-sm font-black">{room.title}</h3>
         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <TypeIcon className="h-3 w-3 shrink-0" />
-          <span className="truncate">{room.host?.username ?? "host"}</span>{(room.host?.country || room.host?.country_code) && <span className="shrink-0" title={room.host.country ?? room.host.country_code ?? "Country"}>{flagForCountry(room.host.country, room.host.country_code)}</span>}
+          <span className="truncate">{room.host?.username ?? "host"}</span>
           {room.pk_battle && (
             <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-1.5 py-0.5 text-[9px] font-black uppercase text-black">
               <Flame className="h-2 w-2" /> PK
