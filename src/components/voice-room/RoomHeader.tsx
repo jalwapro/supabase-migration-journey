@@ -208,7 +208,14 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
       const seeded: RoomMemberPreview[] = [];
       if (room.host.id) { ids.add(room.host.id); seeded.push({ id: room.host.id, username: room.host.username || "Host", avatar: room.host.avatar, country: room.host.country, country_code: room.host.country_code, level: room.host.vip_level ?? 0, host: true }); }
       room.seats.forEach((seat) => { if (seat.user?.id && !ids.has(seat.user.id)) { ids.add(seat.user.id); seeded.push({ id: seat.user.id, username: seat.user.username || "User", avatar: seat.user.avatar, level: seat.user.vip_level ?? 0 }); } });
-      const { data, error } = await supabase.from("room_members").select("user_id,is_moderator").eq("room_id", room.id).limit(100);
+      // The members sheet must use the same active-presence window as the room counter.
+      // Include viewers with no seat, but exclude stale memberships left by disconnected clients.
+      const { data, error } = await supabase
+        .from("room_members")
+        .select("user_id,is_moderator,last_seen_at")
+        .eq("room_id", room.id)
+        .gte("last_seen_at", new Date(Date.now() - 120_000).toISOString())
+        .limit(100);
       if (error) throw error;
       const memberIds = (data ?? []).map((row: { user_id: string }) => row.user_id).filter(Boolean);
       memberIds.forEach(id => ids.add(id));
