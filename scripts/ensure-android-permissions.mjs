@@ -46,4 +46,21 @@ if (!xml.includes("com.google.firebase.messaging.default_notification_channel_id
 xml = xml.slice(0, applicationIndex) + declarations + "\n" + xml.slice(applicationIndex);
 writeFileSync(manifestPath, xml);
 
+// Fail the Android build immediately if either location permission is missing.
+// This prevents shipping an APK whose PROFILE INFO location lookup fails at runtime.
+const verifiedManifest = readFileSync(manifestPath, "utf8");
+const requiredLocationPermissions = [
+  "android.permission.ACCESS_COARSE_LOCATION",
+  "android.permission.ACCESS_FINE_LOCATION",
+];
+const missingLocationPermissions = requiredLocationPermissions.filter(
+  (permission) => !verifiedManifest.includes(`android:name="${permission}"`),
+);
+if (missingLocationPermissions.length > 0) {
+  throw new Error(
+    `AndroidManifest.xml is missing required location permissions: ${missingLocationPermissions.join(", ")}`,
+  );
+}
+
+console.log("✓ Android location permissions verified in AndroidManifest.xml.");
 console.log("✓ Android permissions configured without a persistent background service.");
