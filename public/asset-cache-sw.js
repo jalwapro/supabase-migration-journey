@@ -16,11 +16,7 @@ self.addEventListener("install", (event) => {
       const response = await fetch(shellUrl, { cache: "no-store", credentials: "same-origin" });
       if (!response.ok || response.type === "opaque") return;
       const html = await response.clone().text();
-      await shellCache.put(shellUrl, new Response(html, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      }));
+      await shellCache.put(shellUrl, response.clone());
 
       // Cache JS/CSS referenced by the first Home HTML for the next offline launch.
       const assetUrls = new Set();
