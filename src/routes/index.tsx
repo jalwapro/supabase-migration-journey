@@ -65,7 +65,8 @@ type Room = {
   is_locked: boolean;
   pk_battle: boolean | null;
   host_id: string;
-  host: { username: string | null; avatar: string | null; country?: string | null; country_code?: string | null; city?: string | null } | null;
+  host: { username: string | null; avatar: string | null; country?: string | null; country_code?: string | null; city?: string | null; vip_level?: number | null } | null;
+  host_last_seen_at?: string | null;
   coin_score?: number;
 };
 type LiveUser = {
@@ -209,7 +210,14 @@ async function attachRoomPeople(rooms: Room[]): Promise<Room[]> {
     }
   }
   return rooms.map((room) => {
-    const people = byRoom.get(room.id) ?? [];
+    const people = [...(byRoom.get(room.id) ?? [])];
+    // Include the host only while their own room heartbeat is fresh, deduplicating
+    // them when they also have a room_members row.
+    const hostActive = !!room.host_id && !!room.host_last_seen_at
+      && Date.parse(room.host_last_seen_at) >= Date.now() - 120_000;
+    if (hostActive && !people.some((person) => person.user_id === room.host_id)) {
+      people.unshift({ user_id: room.host_id, avatar: room.host?.avatar ?? null });
+    }
     return { ...room, viewer_count: people.length, people_preview: people.slice(0, 3) };
   });
 }
@@ -326,7 +334,7 @@ function Home() {
       let sel = supabase
         .from("live_rooms")
         .select(
-          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey!inner(username,avatar,country,country_code,city)",
+          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host_last_seen_at,host:profiles!live_rooms_host_id_fkey!inner(username,avatar,country,country_code,city,vip_level)",
         )
         .eq("status", "live")
         .order("viewer_count", { ascending: false })
@@ -359,9 +367,9 @@ function Home() {
         .slice(0, 2);
       return attachRoomPeople(ranked);
     },
-    refetchInterval: 90_000,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
   });
 
   const topHosts = useMemo(() => {
@@ -388,7 +396,7 @@ function Home() {
       let sel = supabase
         .from("live_rooms")
         .select(
-          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey!inner(username,avatar,country,country_code,city)",
+          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host_last_seen_at,host:profiles!live_rooms_host_id_fkey!inner(username,avatar,country,country_code,city,vip_level)",
         )
         .eq("status", "live")
         .order("viewer_count", { ascending: false })
@@ -403,9 +411,9 @@ function Home() {
     },
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length < PAGE_SIZE ? undefined : allPages.length * PAGE_SIZE,
-    refetchInterval: 90_000,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
   });
 
   const restRooms = useMemo(() => {
@@ -1107,7 +1115,7 @@ const RoomCard = memo(function RoomCard({ room, frameTone }: { room: Room; frame
           </span>
           <span className="flex min-w-0 items-center gap-0.5 text-[10px] font-semibold text-white/90">
             <TypeIcon className="h-3 w-3 shrink-0" />
-            <span className="truncate">{room.host?.username ?? "host"}</span>
+            <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country_code && /^[A-Za-z]{2}$/.test(room.host.country_code) ? <span className="shrink-0" aria-label={room.host.country ?? room.host.country_code.toUpperCase()}>{String.fromCodePoint(...room.host.country_code.toUpperCase().split("").map((ch) => 127397 + ch.charCodeAt(0)))}</span> : room.host?.country ? <span className="shrink-0">{COUNTRY_FLAGS[room.host.country] ?? ""}</span> : null}<span className="shrink-0 rounded bg-black/45 px-1 py-0.5 text-[8px] font-bold text-yellow-200">Lv.{Math.max(0, Number(room.host?.vip_level ?? 0))}</span>
           </span>
         </div>
         <h3 className="line-clamp-2 text-xs font-black text-white drop-shadow">
@@ -1153,7 +1161,7 @@ const RoomListItem = memo(function RoomListItem({ room }: { room: Room }) {
         <h3 className="line-clamp-1 text-sm font-black">{room.title}</h3>
         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <TypeIcon className="h-3 w-3 shrink-0" />
-          <span className="truncate">{room.host?.username ?? "host"}</span>
+          <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country_code && /^[A-Za-z]{2}$/.test(room.host.country_code) ? <span className="shrink-0" aria-label={room.host.country ?? room.host.country_code.toUpperCase()}>{String.fromCodePoint(...room.host.country_code.toUpperCase().split("").map((ch) => 127397 + ch.charCodeAt(0)))}</span> : room.host?.country ? <span className="shrink-0">{COUNTRY_FLAGS[room.host.country] ?? ""}</span> : null}<span className="shrink-0 rounded bg-black/45 px-1 py-0.5 text-[8px] font-bold text-yellow-200">Lv.{Math.max(0, Number(room.host?.vip_level ?? 0))}</span>
           {room.pk_battle && (
             <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-1.5 py-0.5 text-[9px] font-black uppercase text-black">
               <Flame className="h-2 w-2" /> PK
