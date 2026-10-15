@@ -13,7 +13,7 @@ interface RoomHeaderProps { room: RoomState; roomCode: string; onlineCount: numb
 type RoomMemberPreview = { id: string; username: string; avatar: string | null; country?: string | null; country_code?: string | null; level: number; host?: boolean; moderator?: boolean };
 type IncomingSeatInvite = { id: string; fromUser: string; inviterName: string; inviterAvatar: string | null; role: "Host" | "Moderator"; seatIndex: number | null };
 
-export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGifterCoins, onHostTap, onReport, onShare, onExit, onHome, onRanking, isHost: isHostProp = false, exitMenuOpen: exitMenuOpenProp, onExitMenuOpenChange }: RoomHeaderProps) {
+export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGifterCoins, onHostTap, onReport, onShare, onExit, onHome, isHost: isHostProp = false, exitMenuOpen: exitMenuOpenProp, onExitMenuOpenChange }: RoomHeaderProps) {
   const { user } = useAuth();
   const { minimizeRoom: saveMinimizedRoom } = useVoiceRoomSession();
   const isHost = isHostProp || user?.id === room.host.id;
