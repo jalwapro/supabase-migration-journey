@@ -40,9 +40,47 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
   const [hostRankOpen, setHostRankOpen] = useState(false);
   const [hostRankLoading, setHostRankLoading] = useState(false);
   const [hostRank, setHostRank] = useState<{ rank: number | null; score: number; frame: string | null; ring: string | null } | null>(null);
+  const [peopleAvatars, setPeopleAvatars] = useState<Array<{ user_id: string; avatar: string | null }>>([]);
   const fileRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => setRoomTitle(room.title), [room.title]);
   useEffect(() => setRoomDp(room.host.avatar), [room.host.avatar]);
+  useEffect(() => {
+    let active = true;
+    let loading = false;
+    const loadPeopleAvatars = async () => {
+      if (loading) return;
+      loading = true;
+      try {
+        const { data, error } = await supabase
+          .from("room_members")
+          .select("user_id,user:profiles!room_members_user_id_fkey(avatar)")
+          .eq("room_id", room.id)
+          .limit(3);
+        if (error) throw error;
+        if (active) {
+          const seen = new Set<string>();
+          setPeopleAvatars(((data ?? []) as Array<{ user_id: string; user?: { avatar: string | null } | null }>)
+            .filter((row) => row.user_id && !seen.has(row.user_id) && !!seen.add(row.user_id))
+            .map((row) => ({ user_id: row.user_id, avatar: row.user?.avatar ?? null })));
+        }
+      } catch (error) {
+        console.warn("[room people avatars]", error);
+      } finally {
+        loading = false;
+      }
+    };
+    void loadPeopleAvatars();
+    const channel = supabase.channel(`room-people-avatars-${room.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${room.id}` }, () => void loadPeopleAvatars())
+      .subscribe();
+    const interval = window.setInterval(() => void loadPeopleAvatars(), 20_000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      void supabase.removeChannel(channel);
+    };
+  }, [room.id]);
+
   useEffect(() => {
     if (!exitMenuOpen) return;
     let active = true;
@@ -305,7 +343,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
     </div>
     <div className="relative z-[61] mt-0 flex min-h-[25px] items-center gap-1 border-b border border-[color:var(--secondary)]/80">
       <button type="button" onClick={tap(openHostRank)} className="relative z-[62] flex min-w-0 flex-1 items-center gap-1.5 px-1 py-0.5 text-[10px] font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,.9)] active:opacity-80" aria-label="Show host rank card" aria-haspopup="dialog"><Trophy className="h-4 w-4 shrink-0 text-[color:var(--secondary)]"/><span className="truncate">{topGifterName ? `${topGifterName} · ${((topGifterCoins ?? 0) / 1000).toFixed(1)}k` : "No ranking yet"}</span><ChevronRight className="ml-auto h-3.5 w-3.5 shrink-0 text-white/90"/></button>
-      <button type="button" onClick={tap(openMembers)} className="relative z-[62] flex shrink-0 items-center gap-1 rounded-full border border-[color:var(--secondary)]/80 bg-[color:var(--secondary)]/25 px-2 py-1 text-[10px] text-white shadow-[0_1px_6px_rgba(0,0,0,.35)] touch-manipulation active:scale-95" aria-label={`Open ${onlineCount} room members`} aria-expanded={membersOpen}><Users className="h-3.5 w-3.5"/><span>{onlineCount}</span></button>
+      <button type="button" onClick={tap(openMembers)} className="relative z-[62] flex shrink-0 items-center gap-1 rounded-full border border-[color:var(--secondary)]/80 bg-[color:var(--secondary)]/25 px-2 py-1 text-[10px] text-white shadow-[0_1px_6px_rgba(0,0,0,.35)] touch-manipulation active:scale-95" aria-label={`Open ${onlineCount} room members`} aria-expanded={membersOpen}><span className="flex -space-x-1.5">{peopleAvatars.map((person) => <span key={person.user_id} className="h-4 w-4 overflow-hidden rounded-full border border-white/70 bg-violet-900">{person.avatar ? <img src={person.avatar} alt="" loading="lazy" className="h-full w-full object-cover"/> : <span className="block h-full w-full bg-white/15"/>}</span>)}</span><Users className="h-3.5 w-3.5"/><span>{onlineCount}</span></button>
     </div>
     {hostRankOpen && <div className="fixed inset-0 z-[2147483020] grid place-items-center bg-black/75 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="host-rank-title" onClick={() => setHostRankOpen(false)}>
       <div className="relative w-full max-w-[340px] overflow-hidden rounded-[28px] border border-amber-300/40 bg-gradient-to-b from-[#32175a] via-[#170a2c] to-[#08030f] p-4 text-white shadow-[0_20px_70px_rgba(0,0,0,.75)]" onClick={e => e.stopPropagation()}>
