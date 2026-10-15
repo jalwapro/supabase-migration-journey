@@ -72,7 +72,8 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
     };
     void loadPeopleAvatars();
     const channel = supabase.channel(`room-people-avatars-${room.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${room.id}` }, () => void loadPeopleAvatars())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "room_members", filter: `room_id=eq.${room.id}` }, () => void loadPeopleAvatars())
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "room_members", filter: `room_id=eq.${room.id}` }, () => void loadPeopleAvatars())
       .subscribe();
     const interval = window.setInterval(() => void loadPeopleAvatars(), 20_000);
     return () => {
