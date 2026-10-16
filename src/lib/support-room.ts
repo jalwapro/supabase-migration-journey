@@ -30,6 +30,27 @@ export type SupportRoomState = {
   is_admin: boolean;
 };
 
+export type SupportRoomPublicStatus = {
+  config: { title: string; cover_url: string | null; enabled: boolean; maintenance: boolean };
+  online: boolean;
+  host_count: number;
+  people_count: number;
+};
+
+/** Safe public summary used by the Home pinned card; no user or queue details. */
+export function useSupportRoomPublicStatus(pollMs = 30_000) {
+  return useQuery({
+    queryKey: ["support_room_public_status"],
+    refetchInterval: pollMs,
+    staleTime: 10_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("support_room_public_status");
+      if (error) throw error;
+      return data as unknown as SupportRoomPublicStatus;
+    },
+  });
+}
+
 /** Live state of the single permanent 24/7 support room. */
 export function useSupportRoomState(pollMs = 8000) {
   return useQuery({
