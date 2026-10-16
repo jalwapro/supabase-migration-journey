@@ -252,7 +252,7 @@ main[data-jalwa-voice-room-root="true"]{
   height:100dvh!important;
   min-height:100dvh!important;
 }
-[data-jalwa-voice-room-root="true"]>[data-jalwa-live-component="voice.room-header"]{
+[data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.room-header"]{
   position:relative!important;
   top:auto!important;
   flex:0 0 auto!important;
