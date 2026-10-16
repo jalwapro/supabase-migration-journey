@@ -31,12 +31,8 @@ export function VoiceRoomSessionProvider({ children }: { children: React.ReactNo
     window.dispatchEvent(new CustomEvent('jalwa:voice-room-exited', { detail: { roomId: exitedRoomId, userId: exitedUserId } }));
   }, [activeRoom]);
   const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => {
-    if (patch.roomId && patch.userId) {
-      try {
-        const exited = JSON.parse(localStorage.getItem(EXITED_ROOM_KEY) || 'null') as { roomId?: string; userId?: string } | null;
-        if (exited?.roomId === patch.roomId && exited?.userId === patch.userId) localStorage.removeItem(EXITED_ROOM_KEY);
-      } catch {}
-    }
+    // Do not clear an explicit-exit marker merely because stale room effects
+    // run again during a route transition. RoomPage owns intentional re-entry.
     setActiveRoom(r => {
       if (r) return { ...r, ...patch };
       if (patch.roomId && patch.roomRoute && patch.userId) {
