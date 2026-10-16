@@ -2072,7 +2072,7 @@ function RoomPage() {
         .eq("room_id", roomId)
         .eq("user_id", user.id);
     }
-    clearRoom();
+    clearRoom(roomId, user?.id);
     setExitConfirmOpen(false);
     setExiting(true);
     // Navigate immediately after the room membership/session is cleared.
