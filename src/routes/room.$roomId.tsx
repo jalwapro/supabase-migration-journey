@@ -888,7 +888,6 @@ function RoomPage() {
         setMembers((prev) => {
           const activeAudience = prev.filter((member) =>
             !seatedIds.has(member.user_id) &&
-            member.seat_index == null &&
             !!member.last_seen_at &&
             Date.parse(member.last_seen_at) >= Date.now() - 120_000
           );
