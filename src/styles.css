@@ -1852,3 +1852,26 @@ body {
 main[data-jalwa-voice-room-root="true"] {
   box-sizing: border-box;
 }
+ 
+/* App-wide native-app text behavior: prevent accidental text selection/copy.
+   Keep editable controls selectable so typing, editing and chat input still work. */
+html,
+body,
+#root,
+#root * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"],
+[contenteditable=""],
+[role="textbox"],
+[data-allow-text-selection="true"] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default;
+}
