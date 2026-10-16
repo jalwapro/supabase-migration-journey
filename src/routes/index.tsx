@@ -227,7 +227,7 @@ async function attachRoomPeople(rooms: Room[]): Promise<Room[]> {
     const tierNames = (tierRows ?? []).map((tier: { name: string }) => tier.name);
     for (const tx of (txRows ?? []) as Array<{ user_id: string; note: string | null; created_at: string }>) {
       if (vipLabels.has(tx.user_id)) continue;
-      const noteName = tx.note?.replace(/^Bought VIP\\s*/i, "").trim();
+      const noteName = tx.note?.replace(/^Bought VIP\s*/i, "").trim();
       const tierName = noteName ? tierNames.find((name) => name.toLowerCase() === noteName.toLowerCase()) : undefined;
       const label = (tierName ?? noteName ?? "").toLowerCase();
       vipLabels.set(tx.user_id, label.includes("svip") || label.includes("super vip") ? "SVIP" : "VIP");
