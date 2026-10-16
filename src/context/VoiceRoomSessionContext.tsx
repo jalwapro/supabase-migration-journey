@@ -18,21 +18,22 @@ export function VoiceRoomSessionProvider({ children }: { children: React.ReactNo
     window.dispatchEvent(new CustomEvent('jalwa:voice-room-minimized', { detail: next }));
   }, [user?.id]);
   const restoreRoom = useCallback(() => setActiveRoom(r => r ? { ...r, isMinimized: false } : r), []);
-  const clearRoom = useCallback((roomId?: string, userId?: string) => {
-    // Explicit exit must be recorded from the route itself too: activeRoom can
-    // already be null/stale while recovery data still exists in React Query.
-    const exitedRoomId = roomId || activeRoom?.roomId;
-    const exitedUserId = userId || activeRoom?.userId;
-    if (exitedRoomId && exitedUserId) {
-      try { localStorage.setItem(EXITED_ROOM_KEY, JSON.stringify({ roomId: exitedRoomId, userId: exitedUserId, at: Date.now() })); } catch {}
+  const clearRoom = useCallback(() => {
+    // Persist the explicit exit before navigating so stale room state cannot
+    // redirect the user back into the room or recreate its minimized popup.
+    if (activeRoom?.roomId && activeRoom.userId) {
+      try { localStorage.setItem(EXITED_ROOM_KEY, JSON.stringify({ roomId: activeRoom.roomId, userId: activeRoom.userId, at: Date.now() })); } catch {}
     }
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     setActiveRoom(null);
-    window.dispatchEvent(new CustomEvent('jalwa:voice-room-exited', { detail: { roomId: exitedRoomId, userId: exitedUserId } }));
   }, [activeRoom]);
   const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => {
-    // Do not clear an explicit-exit marker merely because stale room effects
-    // run again during a route transition. RoomPage owns intentional re-entry.
+    if (patch.roomId && patch.userId) {
+      try {
+        const exited = JSON.parse(localStorage.getItem(EXITED_ROOM_KEY) || 'null') as { roomId?: string; userId?: string } | null;
+        if (exited?.roomId === patch.roomId && exited?.userId === patch.userId) localStorage.removeItem(EXITED_ROOM_KEY);
+      } catch {}
+    }
     setActiveRoom(r => {
       if (r) return { ...r, ...patch };
       if (patch.roomId && patch.roomRoute && patch.userId) {
