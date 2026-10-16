@@ -7,9 +7,11 @@ import { supabase } from'@/integrations/supabase/client';
 import { toast } from'sonner';
 import { useVoiceRoomSession } from'@/context/VoiceRoomSessionContext';
 import { useRoomHeartbeat } from'@/hooks/useRoomHeartbeat';
+import { useZegoRoom } from'@/hooks/useZegoRoom';
 
 const POSITION_KEY ='jalwa:minimized-room-position';
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+function minimizedRoomUid(identity: string) { let hash = 0; for (let i = 0; i < identity.length; i += 1) hash = ((hash << 5) - hash + identity.charCodeAt(i)) | 0; return (Math.abs(hash) % 2_000_000_000) + 1; }
 
 type RecoverableRoom = {
   id: string;
@@ -142,6 +144,41 @@ export function GlobalMinimizedVoiceRoom() {
   const normalizedRoomRoute = room?.roomRoute?.split('?')[0];
   const isViewingActiveRoom = !!normalizedRoomRoute && currentPath === normalizedRoomRoute;
 
+  // The room route owns the normal LiveKit connection and disconnects it when
+  // Home unmounts that route. Reconnect from this root-mounted component after
+  // the route cleanup settles, so a minimized seated voice room stays audible.
+  const [keepAliveReady, setKeepAliveReady] = useState(false);
+  useEffect(() => {
+    setKeepAliveReady(false);
+    if (!user?.id || !room?.roomId || !room.isMinimized || isViewingActiveRoom) return;
+    const timer = window.setTimeout(() => setKeepAliveReady(true), 600);
+    return () => window.clearTimeout(timer);
+  }, [user?.id, room?.roomId, room?.isMinimized, isViewingActiveRoom]);
+
+  const minimizedRoomMeta = useQuery({
+    queryKey: ['minimized-room-rtc-meta', room?.roomId],
+    enabled: !!user?.id && !!room?.roomId && !!room.isMinimized && !isViewingActiveRoom,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('live_rooms')
+        .select('rtc_channel,status,room_type,host_id')
+        .eq('id', room!.roomId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+  });
+  const keepAliveRtc = useZegoRoom({
+    channel: minimizedRoomMeta.data?.rtc_channel ?? null,
+    uid: user?.id ? minimizedRoomUid(user.id) : null,
+    publish: room?.userRole === 'host' || seatPresence.data?.seat_index != null,
+    video: false,
+    kind: 'voice',
+    enabled: !!keepAliveReady && !!user?.id && !!room?.roomId && !!room.isMinimized &&
+      !isViewingActiveRoom && seatPresence.data?.seat_index != null &&
+      minimizedRoomMeta.data?.status === 'live' && minimizedRoomMeta.data?.room_type === 'voice',
+  });
+
   // Keep the membership heartbeat alive while a minimized room remains active.
   // This keeps Home's real people count accurate without keeping the room screen mounted.
   useEffect(() => {
@@ -245,12 +282,22 @@ export function GlobalMinimizedVoiceRoom() {
   };
 
   const toggleMic = () => {
+    if (keepAliveRtc.status === 'connected' && typeof keepAliveRtc.toggleMute === 'function') {
+      const muted = !keepAliveRtc.muted;
+      updateRoom({ microphoneMuted: muted });
+      void keepAliveRtc.toggleMute();
+      return;
+    }
     const muted = !Boolean(room.microphoneMuted);
     updateRoom({ microphoneMuted: muted });
     window.dispatchEvent(new CustomEvent('jalwa:voice-room-toggle-mic', { detail: { muted, roomId: room.roomId } }));
   };
 
   const toggleSpeaker = () => {
+    if (keepAliveRtc.status === 'connected' && typeof keepAliveRtc.toggleSpeaker === 'function') {
+      keepAliveRtc.toggleSpeaker();
+      return;
+    }
     window.dispatchEvent(new CustomEvent('jalwa:voice-room-toggle-speaker', { detail: { roomId: room.roomId } }));
     toast.success('Speaker control sent to Voice Room');
   };
