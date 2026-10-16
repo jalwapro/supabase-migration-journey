@@ -612,6 +612,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
               <div className="flex items-center gap-2 text-xs font-semibold">{selectedEmptySeat.is_locked ? <Lock className="h-4 w-4 text-amber-400" /> : <Unlock className="h-4 w-4 text-emerald-400" />}{selectedEmptySeat.is_locked ? "Seat is Locked" : "Seat is Unlocked"}</div>
               <button type="button" disabled={lockBusy !== null} onClick={() => { const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2; void toggleSeatLock(idx, selectedEmptySeat.is_locked); }} className="rounded-xl bg-amber-400 px-3 py-1.5 text-[10px] font-black text-black">{selectedEmptySeat.is_locked ? "Unlock" : "Lock"}</button>
             </div>
+            {!selectedEmptySeat.is_locked && <button type="button" onClick={() => { const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2; setSelectedEmptySeat(null); onJoinSeat?.(idx); }} className="mb-3 w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-500 px-3 py-3 text-sm font-black text-black shadow-lg">Sit Here · One Tap</button>}
             {isHost && <button type="button" onClick={() => void changeMySeat()} className="mb-3 w-full rounded-xl bg-amber-400 px-3 py-2.5 text-xs font-black text-black shadow-lg">
               {(selectedEmptySeat.index ?? selectedEmptySeat.seatNumber) === 1 ? "Move to Host Seat 1" : "Change Host Seat → " + (selectedEmptySeat.index ?? selectedEmptySeat.seatNumber)}
             </button>}
