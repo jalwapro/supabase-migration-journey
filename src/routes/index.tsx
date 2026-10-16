@@ -9,6 +9,7 @@ import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { DailySpinPopup } from "@/components/DailySpinPopup";
 import { formatCompact } from "@/lib/utils";
 import { getAssetCacheProgress, subscribeAssetCacheProgress, type AssetCacheProgress } from "@/lib/assetCache";
+import { useSupportRoomState } from "@/lib/support-room";
 
 import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
 import jalwaFrameGold from "@/assets/jalwa-frame-gold.png.asset.json";
@@ -44,6 +45,7 @@ import {
   Bell,
   MoreVertical,
   LifeBuoy,
+  Headphones,
   Share2,
   Globe2,
   Heart,
@@ -216,6 +218,7 @@ async function attachRoomPeople(rooms: Room[]): Promise<Room[]> {
 
 function Home() {
   const { user, profile, isAdmin, loading } = useAuth();
+  const supportRoomState = useSupportRoomState(30_000);
   const unread = useUnreadCount();
   const unreadCount = user ? (unread.data ?? 0) : 0;
   const navigate = useNavigate();
@@ -774,61 +777,58 @@ function Home() {
             </label>
           </section>
 
-          {/* Rooms — Top Hosts + All Live */}
+          {/* Rooms — support is a permanent pinned card after the two Top Hosts slots. */}
           <section className="mt-4 space-y-5 px-4">
-            {isRoomsLoading ? (
+            {!isRoomsLoading && topHosts.length > 0 && (
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <Crown className="h-4 w-4 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.35)]" />
+                  <h2 className="text-[10px] font-black uppercase tracking-[.22em] text-white/75">Top Hosts</h2>
+                </div>
+                <RoomFrameFilters />
+                <div className="grid grid-cols-2 gap-3">
+                  {topHosts.map((r, i) => (
+                    <RoomCard key={r.id} room={r} frameTone={i === 0 ? "gold" : "violet"} />
+                  ))}
+                  <SupportRoomPinnedCard state={supportRoomState.data} />
+                </div>
+              </div>
+            )}
+
+            {(isRoomsLoading || topHosts.length === 0) && (
               <div className="grid grid-cols-2 gap-3">
-                {Array.from({ length: 6 }).map((_, i) => (
+                {isRoomsLoading && Array.from({ length: 2 }).map((_, i) => (
                   <div key={i} className="aspect-square rounded-3xl bg-white/5" />
                 ))}
+                <SupportRoomPinnedCard state={supportRoomState.data} />
               </div>
-            ) : filteredRoomsCount > 0 ? (
-              <>
-                {topHosts.length > 0 && (
-                  <div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <Crown className="h-4 w-4 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.35)]" />
-                      <h2 className="text-[10px] font-black uppercase tracking-[.22em] text-white/75">
-                        Top Hosts
-                      </h2>
-                    </div>
-                    <RoomFrameFilters />
-                    <div className="grid grid-cols-2 gap-3">
-                      {topHosts.map((r, i) => (
-                        <RoomCard key={r.id} room={r} frameTone={i === 0 ? "gold" : "violet"} />
-                      ))}
-                    </div>
-                  </div>
-                )}
+            )}
 
-                {restRooms.length > 0 && (
-                  <div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <Radio className="h-4 w-4 text-yellow-400" />
-                      <h2 className="text-xs font-black uppercase tracking-wider text-foreground/80">
-                        All Live Rooms
-                      </h2>
-                    </div>
-                    <div className="space-y-2">
-                      {restRooms.map((r) => (
-                        <RoomListItem key={r.id} room={r} />
-                      ))}
-                    </div>
-                    {restRoomsInfinite.hasNextPage && (
-                      <button
-                        onClick={() => restRoomsInfinite.fetchNextPage()}
-                        disabled={restRoomsInfinite.isFetchingNextPage}
-                        className="mt-3 w-full rounded-xl border border-white/10 bg-[#251142]/80 py-2.5 text-[10px] font-black uppercase tracking-[.2em] text-white/80 transition hover:border-yellow-400/30 hover:bg-[#2A154A] disabled:opacity-50"
-                      >
-                        {restRoomsInfinite.isFetchingNextPage ? "Loading…" : "Load more"}
-                      </button>
-                    )}
-
-                  </div>
+            {restRooms.length > 0 && !isRoomsLoading && (
+              <div>
+                <div className="mb-2 flex items-center gap-2">
+                  <Radio className="h-4 w-4 text-yellow-400" />
+                  <h2 className="text-xs font-black uppercase tracking-wider text-foreground/80">All Live Rooms</h2>
+                </div>
+                <div className="space-y-2">
+                  {restRooms.map((r) => <RoomListItem key={r.id} room={r} />)}
+                </div>
+                {restRoomsInfinite.hasNextPage && (
+                  <button
+                    onClick={() => restRoomsInfinite.fetchNextPage()}
+                    disabled={restRoomsInfinite.isFetchingNextPage}
+                    className="mt-3 w-full rounded-xl border border-white/10 bg-[#251142]/80 py-2.5 text-[10px] font-black uppercase tracking-[.2em] text-white/80 transition hover:border-yellow-400/30 hover:bg-[#2A154A] disabled:opacity-50"
+                  >
+                    {restRoomsInfinite.isFetchingNextPage ? "Loading…" : "Load more"}
+                  </button>
                 )}
-              </>
-            ) : (
-              <EmptyRooms tab={tab} />
+              </div>
+            )}
+
+            {!isRoomsLoading && filteredRoomsCount === 0 && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-center text-xs text-white/55">
+                No other live rooms right now.
+              </div>
             )}
           </section>
 
@@ -935,6 +935,36 @@ function Home() {
   );
 }
 
+
+function SupportRoomPinnedCard({ state }: { state?: { config?: { title?: string; cover_url?: string | null; enabled?: boolean }; online?: boolean; seats?: unknown[] } }) {
+  const online = Boolean(state?.online);
+  const title = state?.config?.title || "24/7 Customer Support";
+  const people = online ? 1 + (state?.seats?.length ?? 0) : 0;
+  return (
+    <Link
+      to="/support-room"
+      aria-label="Open 24/7 Customer Support room"
+      className="group relative aspect-square overflow-hidden rounded-3xl border border-amber-300/40 bg-gradient-to-br from-[#3b1852] via-[#1a0b2b] to-[#080510] shadow-[0_10px_30px_-12px_rgba(251,191,36,0.55)] transition active:scale-[0.98]"
+    >
+      {state?.config?.cover_url && <img src={state.config.cover_url} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-45 transition group-hover:scale-105" />}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/10" />
+      <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-amber-300/30 bg-black/55 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-amber-200">
+        <Headphones className="h-3 w-3" /> Pinned #3
+      </div>
+      <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[8px] font-black text-white">
+        <span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-400" : "bg-white/40"}`} />
+        {online ? "LIVE" : "24/7"}
+      </div>
+      <div className="absolute inset-x-2 bottom-3">
+        <p className="line-clamp-2 text-sm font-black leading-tight text-white">{title}</p>
+        <p className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-white/75">
+          <Users className="h-3 w-3" /> {people} in room
+        </p>
+        <p className="mt-1 text-[9px] font-bold text-amber-200">Tap to contact support</p>
+      </div>
+    </Link>
+  );
+}
 
 type TopFrameRow = {
   slot: 1 | 2;
