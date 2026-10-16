@@ -272,11 +272,13 @@ main[data-jalwa-voice-room-root="true"]{
    beneath the popup; bottom-sheet content naturally rests above that line. */
 :root{--jalwa-room-toolbar-clearance:calc(54px + env(safe-area-inset-bottom,0px))}
 [data-jalwa-voice-room-root="true"] .fixed.inset-0,
+body:has(main[data-jalwa-voice-room-root="true"])>div.fixed.inset-0,
 body:has(main[data-jalwa-voice-room-root="true"])>div .fixed.inset-0{
   bottom:var(--jalwa-room-toolbar-clearance)!important;
   max-height:calc(100dvh - var(--jalwa-room-toolbar-clearance))!important;
 }
 [data-jalwa-voice-room-root="true"] .fixed.inset-x-0.bottom-0,
+body:has(main[data-jalwa-voice-room-root="true"])>div.fixed.inset-x-0.bottom-0,
 body:has(main[data-jalwa-voice-room-root="true"])>div .fixed.inset-x-0.bottom-0{
   bottom:var(--jalwa-room-toolbar-clearance)!important;
   max-height:calc(100dvh - var(--jalwa-room-toolbar-clearance))!important;
