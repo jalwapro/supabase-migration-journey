@@ -210,6 +210,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   };
   const openAnimatedEmojis = (e?: React.SyntheticEvent) => {
     e?.preventDefault(); e?.stopPropagation();
+    if (mySeatIndex == null) return;
     closeRoomSheets();
     setEmojiOpen(true);
   };
@@ -407,7 +408,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
 
       <nav data-jalwa-live-component="voice.bottom-nav" data-voice-room-toolbar="true" style={{ backgroundColor: "rgba(10, 10, 15, 0.95)", paddingBottom: "max(var(--safe-area-inset-bottom, 0px), var(--jalwa-safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 16px)", height: "calc(54px + max(var(--safe-area-inset-bottom, 0px), var(--jalwa-safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 16px))" }} className="relative z-20 box-border flex shrink-0 items-center justify-around border-t border-white/15 px-1">
         <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>{micOn ? <Mic className="h-4 w-4 text-emerald-400" /> : <MicOff className="h-4 w-4 text-rose-400" />}</button>
-        <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}><Smile className="h-3.5 w-3.5" style={{ color: primaryThemeColor }} /></button>
+        {mySeatIndex != null && <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}><Smile className="h-3.5 w-3.5" style={{ color: primaryThemeColor }} /></button>}
         <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Games" aria-expanded={gamesOpen}><Gamepad2 className="h-3.5 w-3.5" style={{ color: accentThemeColor }} /></button>
         <button type="button" onClick={tap(() => { closeRoomSheets(); setPrivateChatOpen(true); })} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-cyan-400/50 bg-cyan-500/20 text-cyan-300 shadow-md")} aria-label="Private Chat"><MessageCircle className="h-4 w-4" /></button>
         <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-10 w-10 place-items-center rounded-2xl p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-white/40 disabled:opacity-40")} style={{ background: `linear-gradient(135deg, ${primaryThemeColor}, ${accentThemeColor})` }} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}>
@@ -429,7 +430,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         </div>
       )}
 
-      {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
+      {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} allowSelfGift={mySeatIndex != null} />}
       <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(emoji, targetSeatIndex) => onSendEmoji?.(emoji, targetSeatIndex)} />
 
       {userMoreOpen && (
