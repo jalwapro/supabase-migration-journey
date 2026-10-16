@@ -287,7 +287,8 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     if (!roomId || !selectedEmptySeat) return;
     let active = true;
     const fetchViewers = async () => {
-      const { data } = await supabase.from("room_members").select("user_id, profiles(id, username, avatar, country, country_code)").eq("room_id", roomId);
+      const cutoff = new Date(Date.now() - 120_000).toISOString();
+      const { data } = await supabase.from("room_members").select("user_id, profiles(id, username, avatar, country, country_code)").eq("room_id", roomId).gte("last_seen_at", cutoff);
       if (!active || !data) return;
       setRoomViewers(data.map((m: any) => ({ id: m.profiles?.id || m.user_id, username: m.profiles?.username || "User", avatar: m.profiles?.avatar || null, country: m.profiles?.country ?? null, country_code: m.profiles?.country_code ?? null })));
     };

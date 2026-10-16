@@ -201,10 +201,10 @@ async function attachRoomPeople(rooms: Room[]): Promise<Room[]> {
     .gte("last_seen_at", new Date(Date.now() - 120_000).toISOString());
   if (error) throw error;
   const byRoom = new Map<string, Array<{ user_id: string; avatar: string | null }>>();
-  for (const row of (data ?? []) as Array<{ room_id: string; user_id: string; last_seen_at: string | null; user?: { avatar: string | null } | null }>) {
+  for (const row of (data ?? []) as unknown as Array<{ room_id: string; user_id: string; last_seen_at: string | null; user?: { avatar: string | null } | Array<{ avatar: string | null }> | null }>) {
     const people = byRoom.get(row.room_id) ?? [];
     if (!people.some((person) => person.user_id === row.user_id)) {
-      people.push({ user_id: row.user_id, avatar: row.user?.avatar ?? null });
+      people.push({ user_id: row.user_id, avatar: (Array.isArray(row.user) ? row.user[0]?.avatar : row.user?.avatar) ?? null });
       byRoom.set(row.room_id, people);
     }
   }
@@ -311,8 +311,6 @@ function Home() {
     // Realtime handles updates via useRealtimeInvalidate above; a slow safety
     // poll is enough — 10s was hammering the DB and jittering the UI.
     refetchInterval: 90_000,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
   });
 
   // Top hosts: small server-side query (top 10 by viewer_count) re-ranked by
@@ -360,8 +358,6 @@ function Home() {
       return attachRoomPeople(ranked);
     },
     refetchInterval: 90_000,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
   });
 
   const topHosts = useMemo(() => {
@@ -964,8 +960,6 @@ function useTopRankFrames() {
       for (const r of (data ?? []) as TopFrameRow[]) map[r.slot] = r;
       return map;
     },
-    staleTime: 15_000,
-    refetchOnWindowFocus: true,
   });
 }
 

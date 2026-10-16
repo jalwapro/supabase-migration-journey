@@ -438,11 +438,13 @@ function RoomPage() {
   useEffect(() => {
     const pruneInactive = () => {
       const cutoff = Date.now() - 120_000;
+      const seatedCutoff = Date.now() - 180_000;
       setMembers((prev) => {
-        const next = prev.filter((member) =>
-          member.seat_index != null ||
-          (!!member.last_seen_at && Date.parse(member.last_seen_at) >= cutoff)
-        );
+        const next = prev.filter((member) => {
+          if (!member.last_seen_at) return false;
+          const seen = Date.parse(member.last_seen_at);
+          return member.seat_index != null ? seen >= seatedCutoff : seen >= cutoff;
+        });
         if (next.length !== prev.length) membersRef.current = next;
         return next;
       });
@@ -798,14 +800,12 @@ function RoomPage() {
       toast.error(`Room data failed: ${firstErr.message}`);
     }
     const presenceCutoff = Date.now() - 120_000;
-    // Seat occupancy is authoritative room state, not viewer presence. Keep
-    // every persisted seated member visible across devices even if Android
-    // background throttling delays their heartbeat. Only unseated viewers
-    // are filtered by the short presence window.
-    const loadedMembers = ((mData ?? []) as unknown as Member[]).filter((member) =>
-      member.seat_index != null ||
-      (!!member.last_seen_at && Date.parse(member.last_seen_at) >= presenceCutoff)
-    );
+    const seatedCutoff = Date.now() - 180_000;
+    const loadedMembers = ((mData ?? []) as unknown as Member[]).filter((member) => {
+      if (!member.last_seen_at) return false;
+      const seen = Date.parse(member.last_seen_at);
+      return member.seat_index != null ? seen >= seatedCutoff : seen >= presenceCutoff;
+    });
     membersRef.current = loadedMembers;
     setMembers(loadedMembers);
     // Backfill after a socket drop must not swallow messages that are still
@@ -2441,7 +2441,7 @@ function RoomPage() {
       title: r.title,
       type: r.room_type,
       host: hostParticipant,
-      viewer_count: Math.max(r.viewer_count, members.length),
+      viewer_count: Math.max(1, members.length),
       seats: roomSeats,
       pk: null
     };

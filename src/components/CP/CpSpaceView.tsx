@@ -132,7 +132,7 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
       let uploadedUrl: string | undefined;
       if (newPostImage) {
         toast.info("Uploading memory photo…");
-        uploadedUrl = await uploadCpMemoryPhoto(space.relation_id, newPostImage);
+        uploadedUrl = await uploadCpMemoryPhoto(newPostImage);
       }
       const post = await postCpDiary(space.relation_id, trimmed, uploadedUrl);
       setPosts((prev) => [post, ...prev]);

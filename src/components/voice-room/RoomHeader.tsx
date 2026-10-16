@@ -60,9 +60,9 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
         if (error) throw error;
         if (active) {
           const seen = new Set<string>();
-          setPeopleAvatars(((data ?? []) as Array<{ user_id: string; last_seen_at: string | null; user?: { avatar: string | null } | null }>)
+          setPeopleAvatars(((data ?? []) as unknown as Array<{ user_id: string; last_seen_at: string | null; user?: { avatar: string | null } | Array<{ avatar: string | null }> | null }>)
             .filter((row) => row.user_id && !seen.has(row.user_id) && !!seen.add(row.user_id))
-            .map((row) => ({ user_id: row.user_id, avatar: row.user?.avatar ?? null })));
+            .map((row) => ({ user_id: row.user_id, avatar: (Array.isArray(row.user) ? row.user[0]?.avatar : row.user?.avatar) ?? null })));
         }
       } catch (error) {
         console.warn("[room people avatars]", error);
@@ -208,7 +208,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
       const seeded: RoomMemberPreview[] = [];
       if (room.host.id) { ids.add(room.host.id); seeded.push({ id: room.host.id, username: room.host.username || "Host", avatar: room.host.avatar, country: room.host.country, country_code: room.host.country_code, level: room.host.vip_level ?? 0, host: true }); }
       room.seats.forEach((seat) => { if (seat.user?.id && !ids.has(seat.user.id)) { ids.add(seat.user.id); seeded.push({ id: seat.user.id, username: seat.user.username || "User", avatar: seat.user.avatar, level: seat.user.vip_level ?? 0 }); } });
-      const { data, error } = await supabase.from("room_members").select("user_id,is_moderator").eq("room_id", room.id).limit(100);
+      const { data, error } = await supabase.from("room_members").select("user_id,is_moderator").eq("room_id", room.id).gte("last_seen_at", new Date(Date.now() - 120_000).toISOString()).limit(100);
       if (error) throw error;
       const memberIds = (data ?? []).map((row: { user_id: string }) => row.user_id).filter(Boolean);
       memberIds.forEach(id => ids.add(id));

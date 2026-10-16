@@ -2,7 +2,7 @@
  * Scoped only to the real VoiceRoom root. No generic grid/header/nav selectors.
  * Functional room logic, LiveKit and realtime behavior are untouched.
  */
-:root{--jalwa-room-max:480px;--jalwa-room-bottom:calc(54px + env(safe-area-inset-bottom,0px))}
+:root{--jalwa-room-max:480px;--jalwa-room-bottom:calc(54px + max(var(--safe-area-inset-bottom, 0px), var(--jalwa-safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 16px))}
 html,body,#root{max-width:100%;overflow-x:hidden}
 body:has(main[data-jalwa-voice-room-root="true"]){overflow:hidden!important;overscroll-behavior:none;background:#05030a!important}
 main[data-jalwa-voice-room-root="true"]{position:fixed!important;inset:0!important;width:100%!important;max-width:var(--jalwa-room-max)!important;height:100dvh!important;min-height:100svh!important;margin:0 auto!important;padding:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;isolation:isolate;background:#090712!important;color:#fff}
@@ -21,7 +21,7 @@ main[data-jalwa-voice-room-root="true"]{position:fixed!important;inset:0!importa
 [data-jalwa-voice-room-root="true"] [data-seat-cell] img{max-width:none}
 [data-jalwa-voice-room-root="true"] [data-voice-room-lower-panel]{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
 [data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.announcement"]{flex:0 0 auto;width:100%;min-width:0;padding:0 6px 3px;box-sizing:border-box}
-[data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.bottom-nav"]{position:relative!important;z-index:80!important;flex:0 0 calc(54px + env(safe-area-inset-bottom,0px))!important;width:100%!important;min-height:calc(54px + env(safe-area-inset-bottom,0px))!important;height:calc(54px + env(safe-area-inset-bottom,0px))!important;margin:0!important;padding:3px max(5px,env(safe-area-inset-left,0px)) env(safe-area-inset-bottom,0px) max(5px,env(safe-area-inset-right,0px))!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:space-around!important;gap:2px!important;border-top:1px solid rgba(255,255,255,.12)!important;background:rgba(8,6,14,.96)!important;backdrop-filter:blur(18px)}
+[data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.bottom-nav"]{position:relative!important;z-index:80!important;flex:0 0 calc(54px + max(var(--safe-area-inset-bottom, 0px), var(--jalwa-safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 16px))!important;width:100%!important;min-height:calc(54px + max(var(--safe-area-inset-bottom, 0px), var(--jalwa-safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 16px))!important;height:calc(54px + max(var(--safe-area-inset-bottom, 0px), var(--jalwa-safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 16px))!important;margin:0!important;padding:3px max(5px,var(--safe-area-inset-left, env(safe-area-inset-left,0px))) max(var(--safe-area-inset-bottom, 0px), var(--jalwa-safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 16px) max(5px,var(--safe-area-inset-right, env(safe-area-inset-right,0px)))!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:space-around!important;gap:2px!important;border-top:1px solid rgba(255,255,255,.12)!important;background:rgba(8,6,14,.96)!important;backdrop-filter:blur(18px)}
 [data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.bottom-nav"] button{flex:1 1 0!important;min-width:38px!important;min-height:38px!important;max-width:58px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 [data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.bottom-nav"] button:nth-child(5){flex:0 0 44px!important}
 [data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.bottom-nav"] button:nth-child(4){flex:0 0 42px!important}
@@ -263,14 +263,14 @@ main[data-jalwa-voice-room-root="true"]{
   bottom:auto!important;
   flex:0 0 calc(54px + env(safe-area-inset-bottom,0px))!important;
   margin-top:auto!important;
-  padding-bottom:env(safe-area-inset-bottom,0px)!important;
+  padding-bottom:max(var(--safe-area-inset-bottom, 0px), var(--jalwa-safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 16px)!important;
 }
 
 
 /* VoiceRoom popup boundary: every full-screen popup/backdrop ends at the
    toolbar's top border. The bottom navigation stays visible and interactive
    beneath the popup; bottom-sheet content naturally rests above that line. */
-:root{--jalwa-room-toolbar-clearance:calc(54px + env(safe-area-inset-bottom,0px))}
+:root{--jalwa-room-toolbar-clearance:calc(54px + max(var(--safe-area-inset-bottom, 0px), var(--jalwa-safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 16px))}
 [data-jalwa-voice-room-root="true"] .fixed.inset-0,
 body:has(main[data-jalwa-voice-room-root="true"])>div.fixed.inset-0,
 body:has(main[data-jalwa-voice-room-root="true"])>div .fixed.inset-0{

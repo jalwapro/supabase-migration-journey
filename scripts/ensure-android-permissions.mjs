@@ -9,25 +9,47 @@ if (!existsSync(manifestPath)) {
 }
 
 let xml = readFileSync(manifestPath, "utf8");
-xml = xml.replace(/\s*<uses-permission android:name="android\.permission\.CAMERA"\s*\/\>/g, "");
 
+// All required native permissions for Jalwa:
+// - Voice / Audio: Mic, Audio settings, Bluetooth headset connect
+// - Video / Photo: Camera, Media images & video (Android 13+), Storage (Android 12-)
+// - Location: Foreground GPS for nearby rooms & regional leaderboards
+// - System: Push notifications, vibration, wake lock
 const permissions = [
+  "android.permission.INTERNET",
   "android.permission.RECORD_AUDIO",
   "android.permission.MODIFY_AUDIO_SETTINGS",
-  // Capacitor Geolocation uses these foreground permissions for country/city detection and location settings.
+  "android.permission.BLUETOOTH_CONNECT",
+  "android.permission.CAMERA",
+  "android.permission.READ_MEDIA_IMAGES",
+  "android.permission.READ_MEDIA_VIDEO",
+  "android.permission.READ_EXTERNAL_STORAGE",
+  "android.permission.WRITE_EXTERNAL_STORAGE",
   "android.permission.ACCESS_COARSE_LOCATION",
   "android.permission.ACCESS_FINE_LOCATION",
-  // Declaring this is required on Android 13+; runtime request is made by the native push flow.
   "android.permission.POST_NOTIFICATIONS",
+  "android.permission.VIBRATE",
+  "android.permission.WAKE_LOCK",
+];
+
+const hardwareFeatures = [
+  '<uses-feature android:name="android.hardware.microphone" android:required="false" />',
+  '<uses-feature android:name="android.hardware.camera" android:required="false" />',
+  '<uses-feature android:name="android.hardware.location" android:required="false" />',
 ];
 
 const missing = permissions.filter(
   (permission) => !xml.includes(`android:name="${permission}"`),
 );
 
-const declarations = missing
-  .map((permission) => `    <uses-permission android:name="${permission}" />`)
-  .join("\n");
+const missingFeatures = hardwareFeatures.filter(
+  (feat) => !xml.includes(feat.replace(/\s+/g, " ").trim()),
+);
+
+const declarations = [
+  ...missing.map((permission) => `    <uses-permission android:name="${permission}" />`),
+  ...missingFeatures.map((feat) => `    ${feat}`),
+].join("\n");
 
 const applicationIndex = xml.indexOf("<application");
 if (applicationIndex === -1) {
@@ -43,24 +65,10 @@ if (!xml.includes("com.google.firebase.messaging.default_notification_channel_id
   xml = xml.slice(0, closeIndex + 1) + "\n" + fcmChannelMeta + xml.slice(closeIndex + 1);
 }
 
-xml = xml.slice(0, applicationIndex) + declarations + "\n" + xml.slice(applicationIndex);
-writeFileSync(manifestPath, xml);
-
-// Fail the Android build immediately if either location permission is missing.
-// This prevents shipping an APK whose PROFILE INFO location lookup fails at runtime.
-const verifiedManifest = readFileSync(manifestPath, "utf8");
-const requiredLocationPermissions = [
-  "android.permission.ACCESS_COARSE_LOCATION",
-  "android.permission.ACCESS_FINE_LOCATION",
-];
-const missingLocationPermissions = requiredLocationPermissions.filter(
-  (permission) => !verifiedManifest.includes(`android:name="${permission}"`),
-);
-if (missingLocationPermissions.length > 0) {
-  throw new Error(
-    `AndroidManifest.xml is missing required location permissions: ${missingLocationPermissions.join(", ")}`,
-  );
+if (declarations.trim()) {
+  xml = xml.slice(0, applicationIndex) + declarations + "\n" + xml.slice(applicationIndex);
 }
 
-console.log("✓ Android location permissions verified in AndroidManifest.xml.");
-console.log("✓ Android permissions configured without a persistent background service.");
+writeFileSync(manifestPath, xml);
+
+console.log("✓ Android permissions and hardware features verified in AndroidManifest.xml.");

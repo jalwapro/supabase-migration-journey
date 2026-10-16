@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Heart, Lock, Sparkles, Send, Coins, Gift } from "lucide-react";
 
 export interface CpExclusiveGiftItem {
