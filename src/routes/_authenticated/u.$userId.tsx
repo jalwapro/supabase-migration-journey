@@ -10,6 +10,7 @@ import { useAutoProfileCardFrame } from "@/hooks/useAutoProfileCardFrame";
 import { getCpPublicPartner } from "@/lib/cp/cpApi";
 import { CpProfileModal } from "@/components/CP/CpProfileModal";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
+import { GiftReceivedStats } from "@/components/GiftReceivedStats";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -688,6 +689,8 @@ function UserProfilePage() {
             </div>
           </div>
         </div>
+
+        <GiftReceivedStats userId={userId} />
 
         {/* Quick actions */}
         {!isMe && (
