@@ -309,6 +309,17 @@ function UserProfilePage() {
 
 
 
+  const publicDecorations = useQuery({
+    queryKey: ["public-user-decorations", userId],
+    enabled: !!userId && !!me?.id,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_public_user_decorations", { _user_id: userId });
+      if (error) throw error;
+      return (data ?? []) as { kind: string; item_id: string; name: string; media_url: string | null; expires_at: string | null; is_equipped: boolean }[];
+    },
+  });
+
   const requestAlbum = useMutation({
     mutationFn: async () => {
       if (!me) throw new Error("Sign in");
@@ -895,6 +906,28 @@ function UserProfilePage() {
                   </div>
                 );
               })}
+            </div>
+          </SectionCard>
+        )}
+
+        {(publicDecorations.data?.length ?? 0) > 0 && (
+          <SectionCard
+            icon={<Sparkles className="h-3 w-3 text-[color:var(--gold)]" />}
+            title={"Owned Frames & Entrances · " + publicDecorations.data!.length}
+          >
+            <div className="grid grid-cols-3 gap-2">
+              {publicDecorations.data!.map((item) => (
+                <div key={item.kind + ":" + item.item_id} className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[.035] p-2">
+                  <div className="aspect-square overflow-hidden rounded-lg bg-black/30">
+                    {item.media_url && !/[.](mp4|webm|mov|svga)($|[?])/i.test(item.media_url) ?
+                      <img src={item.media_url} alt={item.name} loading="lazy" className="h-full w-full object-contain" /> :
+                      <div className="grid h-full place-items-center text-center text-[10px] font-bold text-amber-200"><Sparkles className="mb-1 h-5 w-5" />{item.kind === "entrance" ? "Entrance effect" : "Frame effect"}</div>}
+                  </div>
+                  <div className="mt-1.5 truncate text-[10px] font-bold text-white">{item.name}</div>
+                  <div className="text-[9px] uppercase tracking-wider text-white/50">{item.kind === "entrance" ? "Entrance" : "Frame"}</div>
+                  {item.is_equipped && <span className="absolute right-2 top-2 rounded-full bg-emerald-400/90 px-1.5 py-0.5 text-[8px] font-black text-black">EQUIPPED</span>}
+                </div>
+              ))}
             </div>
           </SectionCard>
         )}
