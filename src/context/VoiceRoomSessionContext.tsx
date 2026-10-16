@@ -34,7 +34,13 @@ export function VoiceRoomSessionProvider({ children }: { children: React.ReactNo
         if (exited?.roomId === patch.roomId && exited?.userId === patch.userId) localStorage.removeItem(EXITED_ROOM_KEY);
       } catch {}
     }
-    setActiveRoom(r => r ? { ...r, ...patch } : r);
+    setActiveRoom(r => {
+      if (r) return { ...r, ...patch };
+      if (patch.roomId && patch.roomRoute && patch.userId) {
+        return { roomId: patch.roomId, roomRoute: patch.roomRoute, userId: patch.userId, isMinimized: patch.isMinimized ?? false, ...patch } as ActiveVoiceRoom;
+      }
+      return r;
+    });
   }, []);
   const value = useMemo(() => ({ activeRoom, minimizeRoom, restoreRoom, clearRoom, updateRoom }), [activeRoom, minimizeRoom, restoreRoom, clearRoom, updateRoom]);
   return <VoiceRoomSessionContext.Provider value={value}>{children}</VoiceRoomSessionContext.Provider>;
