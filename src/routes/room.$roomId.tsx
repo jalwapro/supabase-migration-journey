@@ -249,6 +249,26 @@ function RoomPage() {
   const navigate = useNavigate();
   useEffect(() => {
     if (!user?.id) return;
+
+    // Explicit Exit wins over stale router/recovery navigation for a short
+    // settling window. Do not let this route's own mount effect erase the
+    // marker before the Home navigation finishes.
+    const exitKey = "jalwa:explicitly-exited-room";
+    try {
+      const exited = JSON.parse(localStorage.getItem(exitKey) || "null") as {
+        roomId?: string; userId?: string; at?: number;
+      } | null;
+      if (exited?.roomId === roomId && exited?.userId === user.id) {
+        const age = Date.now() - Number(exited.at || 0);
+        if (age >= 0 && age < 15_000) {
+          void navigate({ to: "/", replace: true });
+          return;
+        }
+        // After the guard window, a fresh intentional visit is allowed.
+        localStorage.removeItem(exitKey);
+      }
+    } catch {}
+
     updateRoom({
       roomId,
       roomRoute: `/room/${encodeURIComponent(roomId)}`,
@@ -258,7 +278,7 @@ function RoomPage() {
       connectionState: "connected",
       microphoneMuted: false,
     });
-  }, [roomId, user?.id, updateRoom]);
+  }, [roomId, user?.id, updateRoom, navigate]);
 
   // A user can only be actively present in one room at a time. Remove their
   // membership from any previous room immediately when entering this room so
@@ -2072,7 +2092,7 @@ function RoomPage() {
         .eq("room_id", roomId)
         .eq("user_id", user.id);
     }
-    clearRoom();
+    clearRoom(roomId, user?.id);
     setExitConfirmOpen(false);
     setExiting(true);
     // Navigate immediately after the room membership/session is cleared.
