@@ -701,6 +701,7 @@ function RoomPage() {
         .eq("room_id", roomId)
         .eq("user_id", user.id);
     }
+    clearRoom(roomId, user?.id);
     navigate({ to: "/" });
   }, [room.data, isHost, user, roomId, navigate]);
 
@@ -1004,6 +1005,7 @@ function RoomPage() {
             !isHost
           ) {
             toast.error("You were removed from this room");
+            clearRoom(roomId, user.id);
             navigate({ to: "/" });
             return;
           }
@@ -1464,6 +1466,7 @@ function RoomPage() {
       if (memberErr) {
         if (/BANNED/i.test(memberErr.message)) {
           toast.error(memberErr.message.replace(/^BANNED:\s*/i, ""));
+          clearRoom(roomId, user.id);
           navigate({ to: "/" });
           return;
         }
@@ -2000,7 +2003,11 @@ function RoomPage() {
 
 
   function leaveRoom() {
-    setExitConfirmOpen(true);
+    if (isHost) {
+      setExitConfirmOpen(true);
+    } else {
+      void doLeaveRoom();
+    }
   }
 
   // Intercept Android/browser hardware back button for EVERYONE in the room.
@@ -2645,6 +2652,58 @@ onPick={(emoji: ChatEmoji) => {
       }
     : undefined}
 />
+{exitConfirmOpen && (
+  <div
+    className="fixed inset-0 z-[2147483001] flex items-center justify-center bg-black/70 px-5"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="route-host-exit-title"
+    onClick={() => !exiting && setExitConfirmOpen(false)}
+  >
+    <div
+      className="w-full max-w-sm rounded-3xl border border-white/20 bg-black/95 p-5 text-white shadow-2xl"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 id="route-host-exit-title" className="text-lg font-black">
+            Exit Room?
+          </h2>
+          <p className="mt-1 text-sm leading-5 text-white/65">
+            Leave the room temporarily. The room stays live and you can rejoin later; this does not end the room for everyone.
+          </p>
+        </div>
+        <button
+          type="button"
+          aria-label="Close"
+          disabled={exiting}
+          onClick={() => setExitConfirmOpen(false)}
+          className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/70 disabled:opacity-40"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          disabled={exiting}
+          onClick={() => setExitConfirmOpen(false)}
+          className="flex-1 rounded-2xl border border-white/15 bg-white/5 py-3 text-sm font-bold text-white disabled:opacity-40"
+        >
+          No
+        </button>
+        <button
+          type="button"
+          disabled={exiting}
+          onClick={() => void doLeaveRoom("grace")}
+          className="flex-1 rounded-2xl bg-red-500 py-3 text-sm font-black text-white disabled:opacity-50"
+        >
+          {exiting ? "Exiting…" : "Yes, Exit Room"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 </div>
 </CamPipelineProvider>
 );

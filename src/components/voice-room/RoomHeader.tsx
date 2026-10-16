@@ -15,7 +15,7 @@ type IncomingSeatInvite = { id: string; fromUser: string; inviterName: string; i
 
 export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGifterCoins, onHostTap, onReport, onShare, onExit, onHome, isHost: isHostProp = false, exitMenuOpen: exitMenuOpenProp, onExitMenuOpenChange }: RoomHeaderProps) {
   const { user } = useAuth();
-  const { minimizeRoom: saveMinimizedRoom } = useVoiceRoomSession();
+  const { minimizeRoom: saveMinimizedRoom, clearRoom } = useVoiceRoomSession();
   const isHost = isHostProp || user?.id === room.host.id;
   const { current: currentEntrance, done: finishEntrance } = useRoomEntrances(room.id, user?.id ?? null);
   const [roomTitle, setRoomTitle] = useState(room.title);
@@ -314,6 +314,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
   const performExit = async () => {
     if (exiting) return;
     setExiting(true);
+    let serverCleanupError: string | null = null;
     try {
       if (user?.id) {
         if (isHost) {
@@ -324,22 +325,41 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
           if (error) throw error;
         }
       }
+    } catch (e) {
+      serverCleanupError = (e as Error)?.message || "Server cleanup failed";
+      console.warn("[room exit] host/viewer cleanup failed; continuing local exit", e);
+    } finally {
+      clearRoom(room.id, user?.id);
       setHostExitConfirmOpen(false);
       setExitMenuOpen(false);
-      window.location.assign("/");
-    } catch (e) { setExiting(false); toast.error(`Couldn't exit room: ${(e as Error).message || "Unknown error"}`); }
+      setExiting(false);
+      if (serverCleanupError) {
+        toast.error("Room se nikal gaye, lekin server cleanup complete nahi hua.");
+      }
+      onHome();
+    }
   };
   const performEndRoom = async () => {
     if (exiting) return;
     setExiting(true);
+    let serverCleanupError: string | null = null;
     try {
       const { error } = await supabase.rpc("leave_room_as_host", { _room_id: room.id, _end_now: true });
       if (error) throw error;
+    } catch (e) {
+      serverCleanupError = (e as Error)?.message || "Server cleanup failed";
+      console.warn("[room end] host end failed; continuing local exit", e);
+    } finally {
+      clearRoom(room.id, user?.id);
       setHostEndConfirmOpen(false);
       setHostExitConfirmOpen(false);
       setExitMenuOpen(false);
-      window.location.assign("/");
-    } catch (e) { setExiting(false); toast.error(`Couldn't end room: ${(e as Error).message || "Unknown error"}`); }
+      setExiting(false);
+      if (serverCleanupError) {
+        toast.error("Room end request failed, par room session close ho gaya.");
+      }
+      onHome();
+    }
   };
   const exitRoom = () => { setExitMenuOpen(false); if (isHost) { setHostExitConfirmOpen(true); return; } void performExit(); };
   const endRoom = () => { setExitMenuOpen(false); setHostEndConfirmOpen(true); };
