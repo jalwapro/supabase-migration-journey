@@ -867,17 +867,23 @@ function RoomPage() {
       if (!active || loading || document.visibilityState !== "visible") return;
       loading = true;
       try {
-        const { data, error } = await supabase
+        const withSeatedAt = await supabase
           .from("room_members")
           .select("room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,last_seen_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)")
           .eq("room_id", roomId)
           .not("seat_index", "is", null);
-        if (!active || error || !data) return;
-        const seated = (data as unknown as Member[]).map((member) => ({
+        const result = (!withSeatedAt.error || !/seated_at/i.test(withSeatedAt.error.message))
+          ? withSeatedAt
+          : await supabase
+              .from("room_members")
+              .select("room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,last_seen_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)")
+              .eq("room_id", roomId)
+              .not("seat_index", "is", null);
+        if (!active || result.error || !result.data) return;
+        const seated = (result.data as unknown as Member[]).map((member) => ({
           ...member,
           seated_at: member.seated_at ?? member.joined_at ?? new Date().toISOString(),
         }));
-        const seatedIds = new Set(seated.map((member) => member.user_id));
         setMembers((prev) => {
           const activeAudience = prev.filter((member) =>
             member.seat_index == null &&
