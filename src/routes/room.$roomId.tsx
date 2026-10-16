@@ -2067,6 +2067,13 @@ function RoomPage() {
 
 
   async function doLeaveRoom(mode: "grace" | "end" = "grace") {
+    if (exiting) return;
+
+    // Leaving the web room must not depend on a server RPC succeeding. A
+    // failed host RPC previously returned early and kept the browser on the
+    // room route, which looked like Exit did nothing. Attempt server cleanup,
+    // but always clear the local session and navigate Home.
+    let serverCleanupError: string | null = null;
     if (user && isHost) {
       try {
         if (mode === "end") {
@@ -2080,27 +2087,37 @@ function RoomPage() {
           if (error) throw error;
         }
       } catch (e) {
-        toast.error(`Couldn't leave room: ${(e as Error).message}`);
-        return;
+        serverCleanupError = (e as Error)?.message || "Server room cleanup failed";
+        console.warn("[room exit] host cleanup failed; leaving locally", e);
       }
     } else if (user) {
-      // Non-host viewer explicitly leaving — remove membership so the
-      // seat/audience count updates and their seat frees for others.
-      await supabase
-        .from("room_members")
-        .delete()
-        .eq("room_id", roomId)
-        .eq("user_id", user.id);
+      try {
+        const { error } = await supabase
+          .from("room_members")
+          .delete()
+          .eq("room_id", roomId)
+          .eq("user_id", user.id);
+        if (error) {
+          serverCleanupError = error.message;
+          console.warn("[room exit] member cleanup failed; leaving locally", error.message);
+        }
+      } catch (e) {
+        serverCleanupError = (e as Error)?.message || "Member cleanup failed";
+        console.warn("[room exit] member cleanup failed; leaving locally", e);
+      }
     }
+
+    // Always record explicit exit before navigating, even if network/RLS/RPC
+    // cleanup failed. This prevents stale browser recovery from reopening it.
     clearRoom(roomId, user?.id);
     setExitConfirmOpen(false);
     setExiting(true);
-    // Navigate immediately after the room membership/session is cleared.
-    // Do not require a page reload and do not leave the user stuck on the
-    // room route while an exit animation timer is pending.
     void navigate({ to: "/", replace: true });
-  }
 
+    if (serverCleanupError) {
+      toast.error("Room se nikal gaye, lekin server cleanup complete nahi hua. Connection check karein.");
+    }
+  }
 
 
   function share() {
