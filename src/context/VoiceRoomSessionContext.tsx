@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { useAuth } from '@/hooks/useAuth';
 
 type ActiveVoiceRoom = { roomId: string; roomName?: string | null; roomAvatar?: string | null; roomRoute: string; userId: string; userRole?: string | null; isMinimized: boolean; connectionState?: string | null; microphoneMuted?: boolean; };
-type VoiceRoomSessionContextValue = { activeRoom: ActiveVoiceRoom | null; minimizeRoom: (room: Omit<ActiveVoiceRoom, 'isMinimized'>) => void; restoreRoom: () => void; clearRoom: () => void; updateRoom: (patch: Partial<ActiveVoiceRoom>) => void; };
+type VoiceRoomSessionContextValue = { activeRoom: ActiveVoiceRoom | null; minimizeRoom: (room: Omit<ActiveVoiceRoom, 'isMinimized'>) => void; restoreRoom: () => void; clearRoom: (roomId?: string, userId?: string) => void; updateRoom: (patch: Partial<ActiveVoiceRoom>) => void; };
 const STORAGE_KEY = 'jalwa:active-voice-room';
 const EXITED_ROOM_KEY = 'jalwa:explicitly-exited-room';
 const VoiceRoomSessionContext = createContext<VoiceRoomSessionContextValue | null>(null);
@@ -18,14 +18,17 @@ export function VoiceRoomSessionProvider({ children }: { children: React.ReactNo
     window.dispatchEvent(new CustomEvent('jalwa:voice-room-minimized', { detail: next }));
   }, [user?.id]);
   const restoreRoom = useCallback(() => setActiveRoom(r => r ? { ...r, isMinimized: false } : r), []);
-  const clearRoom = useCallback(() => {
-    // Persist the explicit exit before navigating so stale room state cannot
-    // redirect the user back into the room or recreate its minimized popup.
-    if (activeRoom?.roomId && activeRoom.userId) {
-      try { localStorage.setItem(EXITED_ROOM_KEY, JSON.stringify({ roomId: activeRoom.roomId, userId: activeRoom.userId, at: Date.now() })); } catch {}
+  const clearRoom = useCallback((roomId?: string, userId?: string) => {
+    // Explicit exit must be recorded from the route itself too: activeRoom can
+    // already be null/stale while recovery data still exists in React Query.
+    const exitedRoomId = roomId || activeRoom?.roomId;
+    const exitedUserId = userId || activeRoom?.userId;
+    if (exitedRoomId && exitedUserId) {
+      try { localStorage.setItem(EXITED_ROOM_KEY, JSON.stringify({ roomId: exitedRoomId, userId: exitedUserId, at: Date.now() })); } catch {}
     }
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     setActiveRoom(null);
+    window.dispatchEvent(new CustomEvent('jalwa:voice-room-exited', { detail: { roomId: exitedRoomId, userId: exitedUserId } }));
   }, [activeRoom]);
   const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => {
     if (patch.roomId && patch.userId) {
