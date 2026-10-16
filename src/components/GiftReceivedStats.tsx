@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Gift, Trophy, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 type Period = "today" | "month" | "all_time";
 type Supporter = {
@@ -28,11 +29,14 @@ const number = (value: unknown) => Number(value ?? 0).toLocaleString();
 
 export function GiftReceivedStats({ userId, compact = false }: { userId: string; compact?: boolean }) {
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const isOwner = user?.id === userId;
+  const periodLabel = (key: Period) => key === "all_time" && !isOwner ? "Visible rooms" : PERIOD_LABELS[key];
   const [period, setPeriod] = useState<Period>("month");
 
   const stats = useQuery({
     queryKey: ["gift-received-stats", userId],
-    enabled: !!userId,
+    enabled: !!userId && !!user?.id,
     staleTime: 15_000,
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
@@ -97,7 +101,7 @@ export function GiftReceivedStats({ userId, compact = false }: { userId: string;
               const item = getStats(key);
               return (
                 <div key={key} className="min-w-0 rounded-xl border border-white/10 bg-black/20 p-2">
-                  <div className="truncate text-[9px] font-bold text-white/50">{PERIOD_LABELS[key]}</div>
+                  <div className="truncate text-[9px] font-bold text-white/50">{periodLabel(key)}</div>
                   <div className="mt-1 text-[11px] font-black text-amber-200" title="Gift value in coins">{number(item?.total_coins)}</div>
                   <div className="text-[9px] text-white/45">Gift value</div>
                   <div className="mt-1 text-[11px] font-bold text-cyan-200" title="Diamonds credited">{number(item?.total_diamonds)}</div>
@@ -107,6 +111,7 @@ export function GiftReceivedStats({ userId, compact = false }: { userId: string;
               );
             })}
           </div>
+          {!isOwner && <p className="mt-2 text-[9px] leading-relaxed text-white/35">For privacy, other viewers only see gifts from live rooms they can access.</p>}
 
           <div className="mt-4 flex items-center gap-2">
             <Trophy className="h-4 w-4 shrink-0 text-amber-300" />
@@ -118,7 +123,7 @@ export function GiftReceivedStats({ userId, compact = false }: { userId: string;
                 className={`rounded-lg border px-1.5 py-2 text-[10px] font-bold transition ${period === key
                   ? "border-amber-300/50 bg-amber-300/15 text-amber-100"
                   : "border-white/10 bg-white/[.03] text-white/55"}`}>
-                {PERIOD_LABELS[key]}
+                {periodLabel(key)}
               </button>
             ))}
           </div>
@@ -141,7 +146,7 @@ export function GiftReceivedStats({ userId, compact = false }: { userId: string;
               ))}
             </div>
           ) : (
-            <p className="mt-2 rounded-xl border border-white/10 bg-black/15 p-3 text-center text-[11px] text-white/45">No supporters for {PERIOD_LABELS[period].toLowerCase()} yet.</p>
+            <p className="mt-2 rounded-xl border border-white/10 bg-black/15 p-3 text-center text-[11px] text-white/45">No supporters for {periodLabel(period).toLowerCase()} yet.</p>
           )}
         </>
       )}
