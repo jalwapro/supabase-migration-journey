@@ -82,9 +82,15 @@ function SplashGate() {
         const exited = JSON.parse(localStorage.getItem("jalwa:explicitly-exited-room") || "null") as {
           roomId?: string; userId?: string; at?: number;
         } | null;
+        // Any fresh explicit Exit by this signed-in user blocks automatic
+        // restoration, even if the persisted activeRoom snapshot is stale or
+        // points at a different room during a route/state race. Manual room
+        // navigation still works because this redirect only runs off /room/*.
         const exitedRecently =
-          exited?.roomId === activeRoom.roomId &&
-          exited?.userId === activeRoom.userId &&
+          !!exited?.roomId &&
+          !!exited?.userId &&
+          exited.userId === activeRoom.userId &&
+          Date.now() - Number(exited.at || 0) >= 0 &&
           Date.now() - Number(exited.at || 0) < 24 * 60 * 60 * 1000;
         if (exitedRecently) return;
       } catch {}
