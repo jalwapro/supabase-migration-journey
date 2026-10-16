@@ -283,3 +283,24 @@ body:has(main[data-jalwa-voice-room-root="true"])>div .fixed.inset-x-0.bottom-0{
   bottom:var(--jalwa-room-toolbar-clearance)!important;
   max-height:calc(100dvh - var(--jalwa-room-toolbar-clearance))!important;
 }
+
+
+/* Global portal sheets used by Host Controls, Chat, Gifts, Emoji, Games and
+   other VoiceRoom panels. Portals render under body, outside the room root,
+   so target their shared overlay contract when a VoiceRoom is mounted. */
+body:has(main[data-jalwa-voice-room-root="true"]) [data-jalwa-overlay="true"].fixed.inset-0 {
+  inset: 0 0 var(--jalwa-room-toolbar-clearance, calc(54px + env(safe-area-inset-bottom, 0px))) 0 !important;
+  height: auto !important;
+  max-height: calc(100dvh - var(--jalwa-room-toolbar-clearance, calc(54px + env(safe-area-inset-bottom, 0px)))) !important;
+}
+body:has(main[data-jalwa-voice-room-root="true"]) [data-jalwa-overlay-content="true"].fixed.bottom-0,
+body:has(main[data-jalwa-voice-room-root="true"]) [data-jalwa-overlay-content="true"].fixed.inset-x-0.bottom-0 {
+  bottom: var(--jalwa-room-toolbar-clearance, calc(54px + env(safe-area-inset-bottom, 0px))) !important;
+  max-height: calc(100dvh - var(--jalwa-room-toolbar-clearance, calc(54px + env(safe-area-inset-bottom, 0px)))) !important;
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
+}
+body:has(main[data-jalwa-voice-room-root="true"]) [data-jalwa-overlay-content="true"].fixed.inset-0 {
+  bottom: var(--jalwa-room-toolbar-clearance, calc(54px + env(safe-area-inset-bottom, 0px))) !important;
+  height: auto !important;
+  max-height: calc(100dvh - var(--jalwa-room-toolbar-clearance, calc(54px + env(safe-area-inset-bottom, 0px)))) !important;
+}
