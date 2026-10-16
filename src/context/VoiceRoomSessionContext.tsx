@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 type ActiveVoiceRoom = { roomId: string; roomName?: string | null; roomAvatar?: string | null; roomRoute: string; userId: string; userRole?: string | null; isMinimized: boolean; connectionState?: string | null; microphoneMuted?: boolean; };
 type VoiceRoomSessionContextValue = { activeRoom: ActiveVoiceRoom | null; minimizeRoom: (room: Omit<ActiveVoiceRoom, 'isMinimized'>) => void; restoreRoom: () => void; clearRoom: () => void; updateRoom: (patch: Partial<ActiveVoiceRoom>) => void; };
 const STORAGE_KEY = 'jalwa:active-voice-room';
+const EXITED_ROOM_KEY = 'jalwa:explicitly-exited-room';
 const VoiceRoomSessionContext = createContext<VoiceRoomSessionContextValue | null>(null);
 export function VoiceRoomSessionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -17,8 +18,24 @@ export function VoiceRoomSessionProvider({ children }: { children: React.ReactNo
     window.dispatchEvent(new CustomEvent('jalwa:voice-room-minimized', { detail: next }));
   }, [user?.id]);
   const restoreRoom = useCallback(() => setActiveRoom(r => r ? { ...r, isMinimized: false } : r), []);
-  const clearRoom = useCallback(() => setActiveRoom(null), []);
-  const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => setActiveRoom(r => r ? { ...r, ...patch } : r), []);
+  const clearRoom = useCallback(() => {
+    // Persist the explicit exit before navigating so stale room state cannot
+    // redirect the user back into the room or recreate its minimized popup.
+    if (activeRoom?.roomId && activeRoom.userId) {
+      try { localStorage.setItem(EXITED_ROOM_KEY, JSON.stringify({ roomId: activeRoom.roomId, userId: activeRoom.userId, at: Date.now() })); } catch {}
+    }
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    setActiveRoom(null);
+  }, [activeRoom]);
+  const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => {
+    if (patch.roomId && patch.userId) {
+      try {
+        const exited = JSON.parse(localStorage.getItem(EXITED_ROOM_KEY) || 'null') as { roomId?: string; userId?: string } | null;
+        if (exited?.roomId === patch.roomId && exited?.userId === patch.userId) localStorage.removeItem(EXITED_ROOM_KEY);
+      } catch {}
+    }
+    setActiveRoom(r => r ? { ...r, ...patch } : r);
+  }, []);
   const value = useMemo(() => ({ activeRoom, minimizeRoom, restoreRoom, clearRoom, updateRoom }), [activeRoom, minimizeRoom, restoreRoom, clearRoom, updateRoom]);
   return <VoiceRoomSessionContext.Provider value={value}>{children}</VoiceRoomSessionContext.Provider>;
 }
