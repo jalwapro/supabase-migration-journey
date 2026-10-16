@@ -72,7 +72,15 @@ export function GlobalMinimizedVoiceRoom() {
     staleTime: 10_000,
   });
 
-  const room = activeRoom ?? (recovery.data ? {
+  const recoverySuppressed = (() => {
+    if (!recovery.data || !user?.id) return false;
+    try {
+      const exited = JSON.parse(localStorage.getItem('jalwa:explicitly-exited-room') || 'null') as { roomId?: string; userId?: string; at?: number } | null;
+      return exited?.roomId === recovery.data.id && exited?.userId === user.id && Date.now() - Number(exited.at || 0) < 24 * 60 * 60 * 1000;
+    } catch { return false; }
+  })();
+
+  const room = activeRoom ?? (!recoverySuppressed && recovery.data ? {
     roomId: recovery.data.id,
     roomName: recovery.data.title,
     roomAvatar: recovery.data.cover_url,
