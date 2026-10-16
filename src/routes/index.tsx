@@ -939,10 +939,10 @@ function Home() {
 }
 
 
-function SupportRoomPinnedCard({ state }: { state?: { config?: { title?: string; cover_url?: string | null; enabled?: boolean }; online?: boolean; seats?: unknown[] } }) {
+function SupportRoomPinnedCard({ state }: { state?: { config?: { title?: string; cover_url?: string | null; enabled?: boolean }; online?: boolean; hosts_live?: unknown[]; seats?: unknown[] } }) {
   const online = Boolean(state?.online);
   const title = state?.config?.title || "24/7 Customer Support";
-  const people = online ? 1 + (state?.seats?.length ?? 0) : 0;
+  const people = online ? Math.max(1, state?.hosts_live?.length ?? 1) + (state?.seats?.length ?? 0) : 0;
   return (
     <Link
       to="/support-room"
