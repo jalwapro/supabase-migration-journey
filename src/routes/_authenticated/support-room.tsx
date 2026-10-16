@@ -101,7 +101,7 @@ function SupportRoomPage() {
         <section className="rounded-3xl border border-border bg-card p-4">
           <div className="flex items-center gap-3">
             <Avatar url={s?.host?.avatar ?? null} name={s?.host?.username ?? "Support"} ring="gold" />
-            <div><p className="text-sm font-bold">{s?.host?.username ?? "Waiting for host"}</p><p className="flex items-center gap-1 text-[11px] text-muted-foreground"><ShieldCheck className="h-3 w-3 text-emerald-400" /> Verified support host</p></div>
+            <div><p className="text-sm font-bold">{s?.host?.username ?? "Waiting for host"}{(s?.hosts_live?.length ?? 0) > 1 ? ` + ${(s?.hosts_live?.length ?? 1) - 1} more` : ""}</p><p className="flex items-center gap-1 text-[11px] text-muted-foreground"><ShieldCheck className="h-3 w-3 text-emerald-400" /> {(s?.hosts_live?.length ?? 0) > 1 ? `${s?.hosts_live?.length} verified support hosts live` : "Verified support host"}</p></div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {Array.from({ length: s?.config.max_users ?? 2 }).map((_, i) => {
