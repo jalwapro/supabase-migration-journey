@@ -10,6 +10,7 @@ import { DailySpinPopup } from "@/components/DailySpinPopup";
 import { formatCompact } from "@/lib/utils";
 import { getAssetCacheProgress, subscribeAssetCacheProgress, type AssetCacheProgress } from "@/lib/assetCache";
 import { useSupportRoomPublicStatus } from "@/lib/support-room";
+import { CountryFlag } from "@/components/CountryFlag";
 
 import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
 import jalwaFrameGold from "@/assets/jalwa-frame-gold.png.asset.json";
@@ -67,7 +68,7 @@ type Room = {
   is_locked: boolean;
   pk_battle: boolean | null;
   host_id: string;
-  host: { username: string | null; avatar: string | null; country?: string | null; country_code?: string | null; city?: string | null } | null;
+  host: { username: string | null; avatar: string | null; country?: string | null; country_code?: string | null; city?: string | null; level?: number | null; vip_level?: number | null; is_vip?: boolean | null; vip_expiry?: string | null; vip_label?: "VIP" | "SVIP" | null } | null;
   coin_score?: number;
 };
 type LiveUser = {
@@ -210,9 +211,37 @@ async function attachRoomPeople(rooms: Room[]): Promise<Room[]> {
       byRoom.set(row.room_id, people);
     }
   }
+  const activeVipHostIds = [...new Set(rooms
+    .filter((room) => room.host?.is_vip && (!room.host.vip_expiry || new Date(room.host.vip_expiry).getTime() > Date.now()))
+    .map((room) => room.host_id))];
+  const vipLabels = new Map<string, "VIP" | "SVIP">();
+  if (activeVipHostIds.length) {
+    const [{ data: txRows }, { data: tierRows }] = await Promise.all([
+      supabase.from("wallet_transactions")
+        .select("user_id,note,created_at")
+        .eq("kind", "vip")
+        .in("user_id", activeVipHostIds)
+        .order("created_at", { ascending: false }),
+      supabase.from("vip_tiers").select("name").eq("is_active", true).order("sort"),
+    ]);
+    const tierNames = (tierRows ?? []).map((tier: { name: string }) => tier.name);
+    for (const tx of (txRows ?? []) as Array<{ user_id: string; note: string | null; created_at: string }>) {
+      if (vipLabels.has(tx.user_id)) continue;
+      const noteName = tx.note?.replace(/^Bought VIP\\s*/i, "").trim();
+      const tierName = noteName ? tierNames.find((name) => name.toLowerCase() === noteName.toLowerCase()) : undefined;
+      const label = (tierName ?? noteName ?? "").toLowerCase();
+      vipLabels.set(tx.user_id, label.includes("svip") || label.includes("super vip") ? "SVIP" : "VIP");
+    }
+  }
   return rooms.map((room) => {
     const people = byRoom.get(room.id) ?? [];
-    return { ...room, viewer_count: people.length, people_preview: people.slice(0, 3) };
+    const vipActive = !!room.host?.is_vip && (!room.host.vip_expiry || new Date(room.host.vip_expiry).getTime() > Date.now());
+    return {
+      ...room,
+      host: room.host ? { ...room.host, vip_label: vipActive ? (vipLabels.get(room.host_id) ?? "VIP") : null } : null,
+      viewer_count: people.length,
+      people_preview: people.slice(0, 3),
+    };
   });
 }
 
@@ -327,7 +356,7 @@ function Home() {
       let sel = supabase
         .from("live_rooms")
         .select(
-          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey!inner(username,avatar,country,country_code,city)",
+          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey!inner(username,avatar,country,country_code,city,level,vip_level,is_vip,vip_expiry)",
         )
         .eq("status", "live")
         .order("viewer_count", { ascending: false })
@@ -387,7 +416,7 @@ function Home() {
       let sel = supabase
         .from("live_rooms")
         .select(
-          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey!inner(username,avatar,country,country_code,city)",
+          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey!inner(username,avatar,country,country_code,city,level,vip_level,is_vip,vip_expiry)",
         )
         .eq("status", "live")
         .order("viewer_count", { ascending: false })
@@ -1142,9 +1171,12 @@ const RoomCard = memo(function RoomCard({ room, frameTone }: { room: Room; frame
               </span>
             )}
           </span>
-          <span className="flex min-w-0 items-center gap-0.5 text-[10px] font-semibold text-white/90">
+          <span className="flex min-w-0 flex-wrap items-center gap-1 text-[10px] font-semibold text-white/90">
             <TypeIcon className="h-3 w-3 shrink-0" />
-            <span className="truncate">{room.host?.username ?? "host"}</span>
+            <span className="max-w-[88px] truncate">{room.host?.username ?? "host"}</span>
+            <CountryFlag country={room.host?.country} countryCode={room.host?.country_code} className="text-[12px]" />
+            <span className="shrink-0 rounded bg-black/55 px-1 py-0.5 text-[8px] font-black text-amber-200">Lv {room.host?.vip_level ?? room.host?.level ?? 0}</span>
+            {room.host?.vip_label && <span className={`shrink-0 rounded px-1 py-0.5 text-[8px] font-black ${room.host.vip_label === "SVIP" ? "bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white" : "bg-gradient-to-r from-amber-300 to-yellow-500 text-black"}`}>{room.host.vip_label}</span>}
           </span>
         </div>
         <h3 className="line-clamp-2 text-xs font-black text-white drop-shadow">
@@ -1190,7 +1222,10 @@ const RoomListItem = memo(function RoomListItem({ room }: { room: Room }) {
         <h3 className="line-clamp-1 text-sm font-black">{room.title}</h3>
         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <TypeIcon className="h-3 w-3 shrink-0" />
-          <span className="truncate">{room.host?.username ?? "host"}</span>
+          <span className="max-w-[110px] truncate">{room.host?.username ?? "host"}</span>
+          <CountryFlag country={room.host?.country} countryCode={room.host?.country_code} className="text-[13px]" />
+          <span className="shrink-0 rounded bg-black/10 px-1 py-0.5 text-[9px] font-black text-amber-300">Lv {room.host?.vip_level ?? room.host?.level ?? 0}</span>
+          {room.host?.vip_label && <span className={`shrink-0 rounded px-1 py-0.5 text-[8px] font-black ${room.host.vip_label === "SVIP" ? "bg-gradient-to-r from-fuchsia-500 to-violet-500 text-white" : "bg-gradient-to-r from-amber-300 to-yellow-500 text-black"}`}>{room.host.vip_label}</span>}
           {room.pk_battle && (
             <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-1.5 py-0.5 text-[9px] font-black uppercase text-black">
               <Flame className="h-2 w-2" /> PK
