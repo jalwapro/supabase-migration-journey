@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { GoogleSignIn, ErrorCode as GoogleErrorCode } from "@capawesome/capacitor-google-sign-in";
-import { Mail, KeyRound, Loader2, Sparkles, ShieldAlert, Send, X } from "lucide-react";
+import { Mail, KeyRound, Loader2, Sparkles, ShieldAlert, Send, X, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
@@ -77,7 +77,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-type Mode = "otp" | "password";
+type Mode = "otp" | "password" | "phone";
 type OtpStep = "email" | "code";
 
 function AuthPage() {
@@ -89,6 +89,9 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
+  const [phone, setPhone] = useState("");
+  const [phoneOtp, setPhoneOtp] = useState("");
+  const [phoneStep, setPhoneStep] = useState<OtpStep>("email");
   const [isSignUp, setIsSignUp] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -179,6 +182,46 @@ function AuthPage() {
     else {
       setOtpStep("code");
       setMsg("We sent a 6-digit login code to your email.");
+    }
+  }
+
+  async function sendPhoneOtp(e: React.FormEvent) {
+    e.preventDefault();
+    resetAlerts();
+    const normalizedPhone = phone.trim().replace(/[\s()-]/g, "");
+    if (!/^\+[1-9]\d{7,14}$/.test(normalizedPhone)) {
+      setErr("Enter your phone number with country code, for example +923001234567.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ phone: normalizedPhone });
+      if (error) throw error;
+      setPhone(normalizedPhone);
+      setPhoneStep("code");
+      setMsg("We sent a 6-digit SMS code to your phone.");
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : "Could not send SMS code. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyPhoneOtp(e: React.FormEvent) {
+    e.preventDefault();
+    resetAlerts();
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone: phone.trim().replace(/[\s()-]/g, ""),
+        token: phoneOtp,
+        type: "sms",
+      });
+      if (error) throw error;
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : "Phone verification failed. Please try again.");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -383,13 +426,45 @@ function AuthPage() {
             </button>
           </div>
 
+          <button
+            type="button"
+            onClick={() => {
+              setMode("phone");
+              setPhoneStep("email");
+              setPhoneOtp("");
+              resetAlerts();
+            }}
+            className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card py-3 font-medium hover:bg-muted transition-colors"
+          >
+            <Phone className="h-4 w-4" />
+            Continue with phone
+          </button>
+
           <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
             <div className="flex-1 h-px bg-border" />
             or
             <div className="flex-1 h-px bg-border" />
           </div>
 
-          {mode === "otp" ? (
+          {mode === "phone" ? (
+            <form onSubmit={phoneStep === "email" ? sendPhoneOtp : verifyPhoneOtp} className="space-y-3">
+              <div className="relative">
+                <Phone className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input type="tel" inputMode="tel" autoComplete="tel" required placeholder="+923001234567" value={phone} disabled={phoneStep === "code"} onChange={(e) => setPhone(e.target.value)} className="input-base pl-10 disabled:opacity-60" />
+              </div>
+              {phoneStep === "code" && (
+                <div className="relative">
+                  <KeyRound className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required autoFocus placeholder="6-digit SMS code" value={phoneOtp} onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, ""))} className="input-base pl-10 tracking-[0.5em] text-center font-semibold" />
+                </div>
+              )}
+              <button type="submit" disabled={busy} className="glow-4d w-full inline-flex items-center justify-center gap-2 rounded-full bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60">
+                {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                {phoneStep === "email" ? "Send SMS code" : "Verify & continue"}
+              </button>
+              {phoneStep === "code" && <button type="button" onClick={() => { setPhoneStep("email"); setPhoneOtp(""); resetAlerts(); }} className="w-full text-xs text-muted-foreground hover:text-foreground">Use a different phone number</button>}
+            </form>
+          ) : mode === "otp" ? (
             <form onSubmit={otpStep === "email" ? sendOtp : verifyOtp} className="space-y-3">
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
