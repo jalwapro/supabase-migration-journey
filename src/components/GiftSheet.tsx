@@ -135,11 +135,13 @@ export function GiftSheet({
   onClose,
   roomId,
   receivers,
+  allowSelfGift,
 }: {
   open: boolean;
   onClose: () => void;
   roomId: string;
   receivers: GiftReceiver[];
+  allowSelfGift: boolean;
 }) {
   const { profile, refresh } = useAuth();
   const qc = useQueryClient();
@@ -222,15 +224,16 @@ export function GiftSheet({
 
   // 3. Receiver options
   const receiverOptions = useMemo(() => {
-    const list = [...receivers];
-    if (profile?.id && !list.some((r) => r.id === profile.id)) {
+    // Self is a valid recipient only while the current user has an active seat.
+    const list = receivers.filter((r) => allowSelfGift || r.id !== profile?.id);
+    if (allowSelfGift && profile?.id && !list.some((r) => r.id === profile.id)) {
       list.unshift({ id: profile.id, username: profile.username ?? "You", avatar: profile.avatar ?? null });
     }
     if (cpPartner?.id && isPartnerInRoom && !list.some((r) => r.id === cpPartner.id)) {
       list.push({ id: cpPartner.id, username: cpPartner.username ?? "Partner", avatar: cpPartner.avatar ?? null });
     }
     return list;
-  }, [receivers, profile?.id, profile?.username, profile?.avatar, cpPartner, isPartnerInRoom]);
+  }, [receivers, profile?.id, profile?.username, profile?.avatar, cpPartner, isPartnerInRoom, allowSelfGift]);
 
   // Reset when sheet opens or closes
   useEffect(() => {
@@ -240,10 +243,13 @@ export function GiftSheet({
     setQty(1);
     if (activeTier === "cp" && cpPartner?.id) {
       setSelectedReceiverIds([cpPartner.id]);
+    } else if (allowSelfGift && profile?.id) {
+      setSelectedReceiverIds([profile.id]);
     } else {
-      setSelectedReceiverIds(profile?.id ? [profile.id] : []);
+      const firstOtherReceiver = receivers.find((receiver) => receiver.id !== profile?.id);
+      setSelectedReceiverIds(firstOtherReceiver ? [firstOtherReceiver.id] : []);
     }
-  }, [open, profile?.id]);
+  }, [open, profile?.id, allowSelfGift]);
 
   // When switching to CP tier, auto-lock receiver to partner
   useEffect(() => {
@@ -257,11 +263,14 @@ export function GiftSheet({
       }
     } else {
       if (selectedGift?.is_cp) setSelectedGift(null);
-      if (selectedReceiverIds.length === 0 && profile?.id) {
-        setSelectedReceiverIds([profile.id]);
+      if (selectedReceiverIds.length === 0) {
+        const defaultReceiver = allowSelfGift
+          ? profile?.id
+          : receiverOptions.find((receiver) => receiver.id !== profile?.id)?.id;
+        setSelectedReceiverIds(defaultReceiver ? [defaultReceiver] : []);
       }
     }
-  }, [activeTier, cpPartner?.id]);
+  }, [activeTier, cpPartner?.id, allowSelfGift]);
 
   // 4. Regular gifts query
   const gifts = useQuery({
@@ -407,6 +416,9 @@ export function GiftSheet({
       // Standard Gifts Flow
       const uniqueTargets = [...new Set(targets)].filter(Boolean);
       if (!uniqueTargets.length) throw new Error("Pick a receiver");
+      if (!allowSelfGift && profile?.id && uniqueTargets.includes(profile.id)) {
+        throw new Error("You must be active on a seat before sending a gift to yourself.");
+      }
 
       if (uniqueTargets.length === 1) {
         const { data, error } = await supabase.rpc("send_gift", {
@@ -458,13 +470,17 @@ export function GiftSheet({
       ? cpPartner?.id
         ? [cpPartner.id]
         : []
-      : [...new Set((sendToAll ? receiverOptions.map((r) => r.id).filter((id) => id !== profile?.id) : selectedReceiverIds).filter(Boolean))];
+      : [...new Set((sendToAll ? receiverOptions.map((r) => r.id) : selectedReceiverIds).filter((id) => Boolean(id) && (allowSelfGift || id !== profile?.id)))];
 
   const totalCost = price(selectedGift) * qty * Math.max(1, effectiveTargets.length);
   const canAfford = (profile?.coins ?? 0) >= totalCost;
 
   const performSend = () => {
     if (!selectedGift || send.isPending) return;
+    if (!allowSelfGift && profile?.id && effectiveTargets.includes(profile.id)) {
+      toast.error("Seat par active hone ke baad hi aap khud ko gift kar sakte hain.");
+      return;
+    }
     if (activeTier === "cp") {
       if (!cpPartner) {
         toast.error("You do not have an active CP partner!");
@@ -500,7 +516,7 @@ export function GiftSheet({
   };
 
   const toggleReceiver = (id: string) => {
-    if (sendToAll || activeTier === "cp") return;
+    if (sendToAll || activeTier === "cp" || (!allowSelfGift && id === profile?.id)) return;
     setSelectedReceiverIds((prev) => {
       if (id === profile?.id) return prev.includes(id) ? [] : [id];
       const withoutSelf = prev.filter((item) => item !== profile?.id);
