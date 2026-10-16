@@ -9,7 +9,7 @@ import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { DailySpinPopup } from "@/components/DailySpinPopup";
 import { formatCompact } from "@/lib/utils";
 import { getAssetCacheProgress, subscribeAssetCacheProgress, type AssetCacheProgress } from "@/lib/assetCache";
-import { useSupportRoomState } from "@/lib/support-room";
+import { useSupportRoomPublicStatus } from "@/lib/support-room";
 
 import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
 import jalwaFrameGold from "@/assets/jalwa-frame-gold.png.asset.json";
@@ -218,7 +218,7 @@ async function attachRoomPeople(rooms: Room[]): Promise<Room[]> {
 
 function Home() {
   const { user, profile, isAdmin, loading } = useAuth();
-  const supportRoomState = useSupportRoomState(30_000);
+  const supportRoomState = useSupportRoomPublicStatus(30_000);
   const unread = useUnreadCount();
   const unreadCount = user ? (unread.data ?? 0) : 0;
   const navigate = useNavigate();
@@ -939,10 +939,10 @@ function Home() {
 }
 
 
-function SupportRoomPinnedCard({ state }: { state?: { config?: { title?: string; cover_url?: string | null; enabled?: boolean }; online?: boolean; hosts_live?: unknown[]; seats?: unknown[] } }) {
+function SupportRoomPinnedCard({ state }: { state?: { config?: { title?: string; cover_url?: string | null; enabled?: boolean }; online?: boolean; host_count?: number; people_count?: number } }) {
   const online = Boolean(state?.online);
   const title = state?.config?.title || "24/7 Customer Support";
-  const people = online ? Math.max(1, state?.hosts_live?.length ?? 1) + (state?.seats?.length ?? 0) : 0;
+  const people = online ? (state?.people_count ?? Math.max(1, state?.host_count ?? 1)) : 0;
   return (
     <Link
       to="/support-room"
