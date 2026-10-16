@@ -57,7 +57,15 @@ export function GlobalMinimizedVoiceRoom() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_my_recoverable_room');
       if (error) throw error;
-      return (Array.isArray(data) && data.length ? data[0] as RecoverableRoom : null);
+      const candidate = (Array.isArray(data) && data.length ? data[0] as RecoverableRoom : null);
+      if (!candidate) return null;
+      // Explicit Exit suppresses auto-recovery for this same room. A manual
+      // visit to the room clears the marker in VoiceRoomSessionContext.
+      try {
+        const exited = JSON.parse(localStorage.getItem('jalwa:explicitly-exited-room') || 'null') as { roomId?: string; userId?: string; at?: number } | null;
+        if (exited?.roomId === candidate.id && exited?.userId === user?.id && Date.now() - Number(exited.at || 0) < 24 * 60 * 60 * 1000) return null;
+      } catch {}
+      return candidate;
     },
     refetchInterval: 60_000,
     refetchOnWindowFocus: false,
