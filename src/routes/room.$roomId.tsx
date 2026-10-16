@@ -249,28 +249,6 @@ function RoomPage() {
   const navigate = useNavigate();
   useEffect(() => {
     if (!user?.id) return;
-
-    // Exit can briefly race with stale router/recovery state. If this exact
-    // room is reopened immediately after an explicit exit, reject that stale
-    // navigation and stay on Home. A later intentional visit clears the marker.
-    try {
-      const key = "jalwa:explicitly-exited-room";
-      const exited = JSON.parse(localStorage.getItem(key) || "null") as {
-        roomId?: string; userId?: string; at?: number;
-      } | null;
-      const isSameRecentExit =
-        exited?.roomId === roomId &&
-        exited?.userId === user.id &&
-        Date.now() - Number(exited.at || 0) < 15_000;
-      if (isSameRecentExit) {
-        void navigate({ to: "/", replace: true });
-        return;
-      }
-      if (exited?.roomId === roomId && exited?.userId === user.id) {
-        localStorage.removeItem(key);
-      }
-    } catch {}
-
     updateRoom({
       roomId,
       roomRoute: `/room/${encodeURIComponent(roomId)}`,
@@ -280,7 +258,7 @@ function RoomPage() {
       connectionState: "connected",
       microphoneMuted: false,
     });
-  }, [roomId, user?.id, updateRoom, navigate]);
+  }, [roomId, user?.id, updateRoom]);
 
   // A user can only be actively present in one room at a time. Remove their
   // membership from any previous room immediately when entering this room so
@@ -2094,7 +2072,7 @@ function RoomPage() {
         .eq("room_id", roomId)
         .eq("user_id", user.id);
     }
-    clearRoom(roomId, user?.id);
+    clearRoom();
     setExitConfirmOpen(false);
     setExiting(true);
     // Navigate immediately after the room membership/session is cleared.
