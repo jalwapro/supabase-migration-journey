@@ -419,7 +419,10 @@ function RoomPage() {
     const pruneInactive = () => {
       const cutoff = Date.now() - 120_000;
       setMembers((prev) => {
-        const next = prev.filter((member) => !!member.last_seen_at && Date.parse(member.last_seen_at) >= cutoff);
+        const next = prev.filter((member) =>
+          member.seat_index != null ||
+          (!!member.last_seen_at && Date.parse(member.last_seen_at) >= cutoff)
+        );
         if (next.length !== prev.length) membersRef.current = next;
         return next;
       });
@@ -729,8 +732,7 @@ function RoomPage() {
         .select(
           "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,last_seen_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
         )
-        .eq("room_id", roomId)
-        .gte("last_seen_at", new Date(Date.now() - 120_000).toISOString());
+        .eq("room_id", roomId);
       if (!withSeatedAt.error || !/seated_at/i.test(withSeatedAt.error.message)) {
         return withSeatedAt;
       }
@@ -739,8 +741,7 @@ function RoomPage() {
         .select(
           "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,last_seen_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
         )
-        .eq("room_id", roomId)
-        .gte("last_seen_at", new Date(Date.now() - 120_000).toISOString());
+        .eq("room_id", roomId);
     };
 
     const [
@@ -776,7 +777,15 @@ function RoomPage() {
       console.error("[room load]", firstErr);
       toast.error(`Room data failed: ${firstErr.message}`);
     }
-    const loadedMembers = (mData ?? []) as unknown as Member[];
+    const presenceCutoff = Date.now() - 120_000;
+    // Seat occupancy is authoritative room state, not viewer presence. Keep
+    // every persisted seated member visible across devices even if Android
+    // background throttling delays their heartbeat. Only unseated viewers
+    // are filtered by the short presence window.
+    const loadedMembers = ((mData ?? []) as unknown as Member[]).filter((member) =>
+      member.seat_index != null ||
+      (!!member.last_seen_at && Date.parse(member.last_seen_at) >= presenceCutoff)
+    );
     membersRef.current = loadedMembers;
     setMembers(loadedMembers);
     // Backfill after a socket drop must not swallow messages that are still
@@ -954,7 +963,9 @@ function RoomPage() {
             last_seen_at?: string | null;
           };
           if (!row?.user_id) return;
-          if (row.last_seen_at && Date.parse(row.last_seen_at) < Date.now() - 120_000) return;
+          // Ignore stale heartbeat-only audience rows, but never discard a
+          // seat assignment just because a mobile OS throttled its heartbeat.
+          if (row.seat_index == null && row.last_seen_at && Date.parse(row.last_seen_at) < Date.now() - 120_000) return;
           // For UPDATE, merge into existing row (profile already loaded).
           if (evt === "UPDATE") {
             const oldRow = payload.old as typeof row | undefined;
