@@ -21,6 +21,7 @@ export type SupportRoomState = {
   online: boolean;
   session: { id: string; host_id: string; started_at: string; users_served: number } | null;
   host: { id: string; username: string | null; avatar: string | null } | null;
+  hosts_live?: { id: string; username: string | null; avatar: string | null; session_id?: string }[];
   seats: SupportSeat[];
   queue_count: number;
   my_seat: number | null;
