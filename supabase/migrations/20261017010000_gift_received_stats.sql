@@ -43,6 +43,28 @@ BEGIN
     JOIN public.gift_sends gs
       ON gs.receiver_id = _user_id
      AND (p.start_at IS NULL OR gs.created_at >= p.start_at)
+     -- The owner can see their full history. Other viewers only see gift rows
+     -- from live rooms that are unlocked or that they currently belong to.
+     AND (
+       auth.uid() = _user_id
+       OR (
+         gs.room_id IS NOT NULL
+         AND EXISTS (
+           SELECT 1
+           FROM public.live_rooms r
+           WHERE r.id = gs.room_id
+             AND r.status = 'live'
+             AND (
+               NOT COALESCE(r.is_locked, false)
+               OR r.host_id = auth.uid()
+               OR EXISTS (
+                 SELECT 1 FROM public.room_members m
+                 WHERE m.room_id = r.id AND m.user_id = auth.uid()
+               )
+             )
+         )
+       )
+     )
   ),
   totals AS (
     SELECT s.period,
