@@ -48,7 +48,7 @@ function SupportRoomPage() {
   const s = state.data;
   const isHost = !!s?.is_host;
   const seated = s?.my_seat != null;
-  const connected = isHost ? !!s?.online && s?.host?.id === user?.id : seated;
+  const connected = isHost ? !!s?.hosts_live?.some((host) => host.id === user?.id) : seated;
 
   const myUid = useMemo(() => (user ? uidFromUuid(user.id) : null), [user]);
 
@@ -123,7 +123,7 @@ function SupportRoomPage() {
         {connected && <p className="text-center text-[11px] text-muted-foreground">Voice: {liveKit.status}{liveKit.error ? ` — ${liveKit.error}` : ""}</p>}
 
         {isHost ? <div className="space-y-2">
-          {s?.online && s.host?.id === user?.id ? <button onClick={() => endSession.mutate()} className="w-full rounded-2xl bg-red-500 py-3 text-sm font-black text-white">End Support Session</button> : <button onClick={() => goLive.mutate(undefined, { onError: (e) => toast.error((e as Error).message.replace(/_/g, " ").toLowerCase()), onSuccess: () => toast.success("You are live for support") })} className="w-full rounded-2xl bg-[color:var(--primary)] py-3 text-sm font-black text-white">Go Live as Support Host</button>}
+          {s?.hosts_live?.some((host) => host.id === user?.id) ? <button onClick={() => endSession.mutate()} className="w-full rounded-2xl bg-red-500 py-3 text-sm font-black text-white">End My Support Session</button> : <button onClick={() => goLive.mutate(undefined, { onError: (e) => toast.error((e as Error).message.replace(/_/g, " ").toLowerCase()), onSuccess: () => toast.success("You are live for support") })} className="w-full rounded-2xl bg-[color:var(--primary)] py-3 text-sm font-black text-white">Go Live as Support Host</button>}
           {connected && <button onClick={() => void liveKit.toggleMute()} className="w-full rounded-2xl border border-border bg-card py-3 text-sm font-bold">{liveKit.muted ? "Unmute microphone" : "Mute microphone"}</button>}
         </div> : seated ? <div className="space-y-2">
           <button onClick={() => void liveKit.toggleMute()} className="w-full rounded-2xl border border-border bg-card py-3 text-sm font-bold">{liveKit.muted ? "Unmute microphone" : "Mute microphone"}</button>
