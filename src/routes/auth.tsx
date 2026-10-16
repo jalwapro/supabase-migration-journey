@@ -492,6 +492,29 @@ function AuthPage() {
             </form>
           )}
 
+          {mode === "otp" && (
+            <div className="mt-4 flex items-center justify-between gap-3 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("password");
+                  setIsSignUp(true);
+                  setPassword("");
+                  resetAlerts();
+                }}
+                className="font-medium text-primary hover:opacity-80"
+              >
+                Create account
+              </button>
+              <Link
+                to="/reset-password"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Forgot password?
+              </Link>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => {
