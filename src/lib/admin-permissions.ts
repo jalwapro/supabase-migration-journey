@@ -22,6 +22,7 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, string | string[]> = {
   "/admin/rankings": "rankings.view",
   "/admin/reports": "reports.manage",
   "/admin/support": "support.manage",
+  "/admin/support-room": "support.manage",
   "/admin/notifications": "notifications.manage",
   "/admin/push": "notifications.manage",
   "/admin/logs": "audit.view",
