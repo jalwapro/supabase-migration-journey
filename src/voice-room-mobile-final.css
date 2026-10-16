@@ -241,3 +241,27 @@ main[data-jalwa-voice-room-root="true"]{position:fixed!important;inset:0!importa
     flex-basis:46px!important;
   }
 }
+
+
+/* Native + browser system-bar contract:
+   the room stays inside the usable viewport; header and toolbar stay in the
+   fixed flex frame instead of sliding under status/navigation bars. */
+main[data-jalwa-voice-room-root="true"]{
+  box-sizing:border-box!important;
+  padding-top:env(safe-area-inset-top,0px)!important;
+  height:100dvh!important;
+  min-height:100dvh!important;
+}
+[data-jalwa-voice-room-root="true"]>[data-jalwa-live-component="voice.room-header"]{
+  position:relative!important;
+  top:auto!important;
+  flex:0 0 auto!important;
+  padding-top:max(4px,env(safe-area-inset-top,0px))!important;
+}
+[data-jalwa-voice-room-root="true"]>[data-jalwa-live-component="voice.bottom-nav"]{
+  position:relative!important;
+  bottom:auto!important;
+  flex:0 0 calc(54px + env(safe-area-inset-bottom,0px))!important;
+  margin-top:auto!important;
+  padding-bottom:env(safe-area-inset-bottom,0px)!important;
+}
