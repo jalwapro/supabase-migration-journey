@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Check, Globe2, Loader2, Sparkles, UserRound } from "lucide-react";
-import { useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,8 @@ function profileIsComplete(profile: { full_name?: string | null; username?: stri
  */
 export function FirstLoginProfileSetup() {
   const { user, profile, loading, refresh } = useAuth();
+  const navigate = useNavigate();
+  const [completedUserId, setCompletedUserId] = useState<string | null>(null);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [name, setName] = useState("");
@@ -52,7 +54,7 @@ export function FirstLoginProfileSetup() {
   }, [countryQuery]);
 
   const publicRoute = pathname === "/auth" || pathname === "/privacy" || pathname === "/terms" || pathname === "/splash";
-  const needsSetup = !!user && !!profile && !profileIsComplete(profile) && !publicRoute && !pathname.startsWith("/room/");
+  const needsSetup = !!user && !!profile && !profileIsComplete(profile) && completedUserId !== user.id && !publicRoute && !pathname.startsWith("/room/");
 
   async function pickAvatar(file: File) {
     if (!user) return;
@@ -97,8 +99,13 @@ export function FirstLoginProfileSetup() {
       if (!savedProfile) {
         throw new Error("Profile was not saved. Please check your connection and try again.");
       }
+      // Close onboarding immediately after the database confirms the save. Profile
+      // hydration can briefly return stale cached state, so do not let that keep
+      // the blocking modal over Home after a successful write.
+      setCompletedUserId(user.id);
       await refresh();
       toast.success("Profile saved. Welcome to JALWA!");
+      navigate({ to: "/", replace: true });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not save your profile. Please try again.");
     } finally {
