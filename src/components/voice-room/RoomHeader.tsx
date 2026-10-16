@@ -291,11 +291,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
   };
   const openExitMenu = () => setExitMenuOpen(true);
   const minimizeRoom = () => {
-    const hasActiveSeat = Boolean(user?.id && room.seats.some((seat) => seat.user?.id === user.id));
-    if (!hasActiveSeat) {
-      toast.info("Join a seat before minimizing the room");
-      return;
-    }
+    // Minimize is available to everyone in the room; joining a seat is optional.
     setExitMenuOpen(false);
     if (user?.id) {
       saveMinimizedRoom({
