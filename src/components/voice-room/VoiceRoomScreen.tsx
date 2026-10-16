@@ -63,9 +63,11 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
 
-  // Native VoiceRoom fullscreen: hide Android/iOS system bars only while the room is open.
+  // Keep the phone status/navigation bars visible. The room itself fills the
+  // available WebView area, with its own header and bottom toolbar locked in
+  // the flex layout between the system bars on different mobile devices.
   useEffect(() => {
-    void setVoiceRoomFullscreen(true);
+    void setVoiceRoomFullscreen(false);
     return () => { void setVoiceRoomFullscreen(false); };
   }, []);
 
