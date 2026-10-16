@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { frameForLevel } from "@/lib/levelFrames";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 import { CountryFlag } from "@/components/CountryFlag";
-import { GiftReceivedStats } from "@/components/GiftReceivedStats";
+import { RoomGiftSummary } from "@/components/voice-room/RoomGiftSummary";
 
 export type VoiceRoomMemberProfile = {
   id: string;
@@ -229,18 +229,18 @@ export function VoiceRoomMemberSheet({
             )}
           </div>
         ) : null}
-        <section className="relative z-10 flex w-full max-h-[88dvh] flex-col overflow-hidden rounded-t-[28px] border border-white/10 bg-[#0d0616] p-0 text-white shadow-[0_-18px_60px_rgba(0,0,0,.55)]" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Room member profile">
+        <section className="relative z-10 flex w-full max-h-[64dvh] flex-col overflow-hidden rounded-t-[28px] border border-white/10 bg-[#0d0616] p-0 text-white shadow-[0_-18px_60px_rgba(0,0,0,.55)]" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Room member profile">
         <div className="relative z-10 flex min-h-0 flex-col">
-                    <div className="relative z-10 flex min-h-0 flex-col overflow-y-auto rounded-t-[28px] bg-[#0d0616] p-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
-        <div className="mx-auto mb-4 h-1.5 w-11 rounded-full bg-white/20" />
-        <div className="mb-1 flex items-center gap-4">
-          <div className="relative h-[84px] w-[84px] shrink-0">
+                    <div className="relative z-10 flex min-h-0 flex-col overflow-y-auto rounded-t-[28px] bg-[#0d0616] p-4 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+        <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-white/20" />
+        <div className="mb-1 flex items-center gap-3">
+          <div className="relative h-[60px] w-[60px] shrink-0">
             <div className="absolute inset-[4px] z-10 overflow-hidden rounded-full border-2 border-white/20 bg-black shadow-lg">
               {member.avatar ? <img src={member.avatar} alt={displayName} loading="eager" decoding="async" className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xl font-black">{displayName.slice(0, 1).toUpperCase()}</div>}
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex min-w-0 items-center gap-1.5 text-xl font-black"><span className="truncate">{displayName}</span></div>
+            <div className="flex min-w-0 items-center gap-1.5 text-base font-black"><span className="truncate">{displayName}</span></div>
             <div className="mt-1 text-xs font-semibold text-white/65">Level {displayLevel}{displayVipLevel > 0 ? ` · VIP ${displayVipLevel}` : ""}</div>
             {(profile?.country || profile?.city) && <div className="mt-1 flex min-w-0 items-center gap-1 text-xs text-white/55"><CountryFlag country={profile?.country} countryCode={profile?.country_code} className="text-sm" /><span className="truncate">{[profile?.city, profile?.country].filter(Boolean).join(", ")}</span></div>}
             <div className="mt-2 inline-flex w-fit items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-200">● {member.is_muted ? "Microphone muted" : "Microphone active"}</div>
@@ -253,7 +253,7 @@ export function VoiceRoomMemberSheet({
           <div className="rounded-2xl border border-white/10 bg-white/5 p-3"><div className="text-[9px] uppercase tracking-wider text-white/40">Microphone</div><div className="mt-1 text-sm font-black">{member.is_muted ? "Muted" : "On"}</div></div>
         </div>
 
-        <GiftReceivedStats userId={member.id} compact />
+        <RoomGiftSummary roomId={roomId} userId={member.id} />
 
         <div className="mt-3 grid grid-cols-3 gap-2">
           <button type="button" onClick={() => void openProfile()} className="h-11 rounded-2xl border border-white/10 bg-white/7 text-xs font-black">Profile</button>
