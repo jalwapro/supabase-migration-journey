@@ -884,8 +884,10 @@ function RoomPage() {
           ...member,
           seated_at: member.seated_at ?? member.joined_at ?? new Date().toISOString(),
         }));
+        const seatedIds = new Set(seated.map((member) => member.user_id));
         setMembers((prev) => {
           const activeAudience = prev.filter((member) =>
+            !seatedIds.has(member.user_id) &&
             member.seat_index == null &&
             !!member.last_seen_at &&
             Date.parse(member.last_seen_at) >= Date.now() - 120_000
