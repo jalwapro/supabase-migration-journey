@@ -175,7 +175,7 @@ export function GlobalMinimizedVoiceRoom() {
     video: false,
     kind: 'voice',
     enabled: !!keepAliveReady && !!user?.id && !!room?.roomId && !!room.isMinimized &&
-      !isViewingActiveRoom && seatPresence.data?.seat_index != null &&
+      !isViewingActiveRoom &&
       minimizedRoomMeta.data?.status === 'live' && minimizedRoomMeta.data?.room_type === 'voice',
   });
 
@@ -213,11 +213,8 @@ export function GlobalMinimizedVoiceRoom() {
   // another page. The server now preserves rooms until logout / 7-day inactivity.
   useRoomHeartbeat(room?.roomId, !!user?.id && room?.userRole === 'host' && !!room?.isMinimized && !isViewingActiveRoom);
 
-  const hasActiveSeat = seatPresence.data?.seat_index != null;
-
-  // Only a user who still owns an actual seat may see the minimized-room popup.
-  // A viewer who is merely present in the room remains counted, but gets no floating popup.
-  if (!user || !room || isViewingActiveRoom || (activeRoom && !activeRoom.isMinimized) || !seatPresence.isFetched || !hasActiveSeat) return null;
+  // Any current room member can keep the room minimized; taking a seat is optional.
+  if (!user || !room || isViewingActiveRoom || (activeRoom && !activeRoom.isMinimized) || !seatPresence.isFetched || !seatPresence.data) return null;
 
   const startDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     dragging.current = true;
