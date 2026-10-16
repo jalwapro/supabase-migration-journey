@@ -75,9 +75,22 @@ function SplashGate() {
     if (typeof window === "undefined") return;
     if (pathname === "/privacy" || pathname === "/terms") return;
     if (activeRoom?.roomRoute && !activeRoom.isMinimized && !pathname.startsWith("/room/") && pathname !== "/splash") {
+      // Explicit Exit must take precedence over this global "restore active
+      // room" redirect. Otherwise the effect can race with clearRoom() and
+      // send the user back into the room while Home is mounting.
+      try {
+        const exited = JSON.parse(localStorage.getItem("jalwa:explicitly-exited-room") || "null") as {
+          roomId?: string; userId?: string; at?: number;
+        } | null;
+        const exitedRecently =
+          exited?.roomId === activeRoom.roomId &&
+          exited?.userId === activeRoom.userId &&
+          Date.now() - Number(exited.at || 0) < 24 * 60 * 60 * 1000;
+        if (exitedRecently) return;
+      } catch {}
       navigate({ to: activeRoom.roomRoute as any, replace: true });
     }
-  }, [pathname, navigate, activeRoom?.roomRoute, activeRoom?.isMinimized]);
+  }, [pathname, navigate, activeRoom?.roomId, activeRoom?.userId, activeRoom?.roomRoute, activeRoom?.isMinimized]);
 
   return null;
 }
