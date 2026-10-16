@@ -790,6 +790,9 @@ function Home() {
                   {topHosts.map((r, i) => (
                     <RoomCard key={r.id} room={r} frameTone={i === 0 ? "gold" : "violet"} />
                   ))}
+                  {Array.from({ length: Math.max(0, 2 - topHosts.length) }).map((_, i) => (
+                    <div key={`top-host-slot-${i}`} aria-hidden className="aspect-square rounded-3xl border border-white/5 bg-white/[0.02]" />
+                  ))}
                   <SupportRoomPinnedCard state={supportRoomState.data} />
                 </div>
               </div>
@@ -797,8 +800,8 @@ function Home() {
 
             {(isRoomsLoading || topHosts.length === 0) && (
               <div className="grid grid-cols-2 gap-3">
-                {isRoomsLoading && Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="aspect-square rounded-3xl bg-white/5" />
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={`pinned-slot-${i}`} aria-hidden className={`aspect-square rounded-3xl ${isRoomsLoading ? "bg-white/5" : "border border-white/5 bg-white/[0.02]"}`} />
                 ))}
                 <SupportRoomPinnedCard state={supportRoomState.data} />
               </div>
