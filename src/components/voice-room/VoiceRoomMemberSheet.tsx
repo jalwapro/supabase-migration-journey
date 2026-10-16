@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { frameForLevel } from "@/lib/levelFrames";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 import { CountryFlag } from "@/components/CountryFlag";
+import { GiftReceivedStats } from "@/components/GiftReceivedStats";
 
 export type VoiceRoomMemberProfile = {
   id: string;
@@ -251,6 +252,8 @@ export function VoiceRoomMemberSheet({
           <div className="rounded-2xl border border-white/10 bg-white/[.045] p-3"><div className="text-[9px] uppercase tracking-wider text-white/40">Gift Score</div><div className="mt-1 text-sm font-black">{Number(member.gift_score ?? 0).toLocaleString()}</div></div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-3"><div className="text-[9px] uppercase tracking-wider text-white/40">Microphone</div><div className="mt-1 text-sm font-black">{member.is_muted ? "Muted" : "On"}</div></div>
         </div>
+
+        <GiftReceivedStats userId={member.id} compact />
 
         <div className="mt-3 grid grid-cols-3 gap-2">
           <button type="button" onClick={() => void openProfile()} className="h-11 rounded-2xl border border-white/10 bg-white/7 text-xs font-black">Profile</button>
