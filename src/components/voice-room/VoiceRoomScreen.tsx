@@ -78,7 +78,6 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   useEffect(() => {
     const closeTopOverlay = () => {
       if (generatedPin) { setGeneratedPin(null); return true; }
-      if (exitMenuOpen) { setExitMenuOpen(false); return true; }
       if (privateChatOpen) { setPrivateChatOpen(false); return true; }
       if (giftOpen) { setGiftOpen(false); return true; }
       if (emojiOpen) { setEmojiOpen(false); return true; }
@@ -86,6 +85,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       if (popularityOpen) { setPopularityOpen(false); return true; }
       if (userMoreOpen) { setUserMoreOpen(false); return true; }
       if (showMiniInputPopup) { setShowMiniInputPopup(false); setMiniDraft(""); return true; }
+      if (exitMenuOpen) { setExitMenuOpen(false); return true; }
       if (selectedMember) { setSelectedMember(null); return true; }
       if (hostSettingsOpen) { setHostSettingsOpen(false); return true; }
       if (moderatorControlsOpen) { setModeratorControlsOpen(false); return true; }
@@ -183,11 +183,49 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
     return list.filter(u => !seen.has(u.id) && seen.add(u.id)); 
   }, [room.host, room.seats]);
 
-  const openGifts = () => { if (!roomSettings.gifts_enabled) return; setGiftOpen(true); onOpenGift(); };
-  const openAnimatedEmojis = (e?: React.SyntheticEvent) => { e?.preventDefault(); e?.stopPropagation(); setEmojiOpen(true); };
-  const openGamesModal = (e?: React.SyntheticEvent) => { e?.preventDefault(); e?.stopPropagation(); setGamesOpen(true); onOpenGames?.(); };
-  const openPopularity = () => setPopularityOpen(true);
-  const openMoreForRole = () => { if (isHost) setHostSettingsOpen(true); else if (isModerator) setModeratorControlsOpen(true); else setUserMoreOpen(true); };
+  // VoiceRoom overlays are mutually exclusive: opening one always dismisses the previous sheet.
+  const closeRoomSheets = () => {
+    setGiftOpen(false);
+    setEmojiOpen(false);
+    setGamesOpen(false);
+    setPopularityOpen(false);
+    setUserMoreOpen(false);
+    setShowMiniInputPopup(false);
+    setMiniDraft("");
+    setPrivateChatOpen(false);
+    setSelectedMember(null);
+    setHostSettingsOpen(false);
+    setModeratorControlsOpen(false);
+    setExitMenuOpen(false);
+    setGeneratedPin(null);
+    setShowHostFreePopup(false);
+    setShowPinModal(false);
+    setShowRocketAnimation(false);
+  };
+  const openGifts = () => {
+    if (!roomSettings.gifts_enabled) return;
+    closeRoomSheets();
+    setGiftOpen(true);
+    onOpenGift();
+  };
+  const openAnimatedEmojis = (e?: React.SyntheticEvent) => {
+    e?.preventDefault(); e?.stopPropagation();
+    closeRoomSheets();
+    setEmojiOpen(true);
+  };
+  const openGamesModal = (e?: React.SyntheticEvent) => {
+    e?.preventDefault(); e?.stopPropagation();
+    closeRoomSheets();
+    setGamesOpen(true);
+    onOpenGames?.();
+  };
+  const openPopularity = () => { closeRoomSheets(); setPopularityOpen(true); };
+  const openMoreForRole = () => {
+    closeRoomSheets();
+    if (isHost) setHostSettingsOpen(true);
+    else if (isModerator) setModeratorControlsOpen(true);
+    else setUserMoreOpen(true);
+  };
   const joinSeat = (index: number) => { if (roomSettings.is_locked && !isHost && !isUnlockedByPin) { setShowPinModal(true); return; } onJoinSeat(index); };
   
   const hostMedia = hostTheme?.bg_image || hostTheme?.animation_url || hostTheme?.preview_url;
@@ -347,7 +385,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
                     })
                   )}
                 </div>
-                <div onClick={() => { if (!roomSettings.chat_enabled) return; setShowMiniInputPopup(true); }} className={cn("mx-1.5 mb-1.5 flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 shadow-inner cursor-pointer select-none", !roomSettings.chat_enabled && "opacity-50")}>
+                <div onClick={() => { if (!roomSettings.chat_enabled) return; closeRoomSheets(); setShowMiniInputPopup(true); }} className={cn("mx-1.5 mb-1.5 flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 shadow-inner cursor-pointer select-none", !roomSettings.chat_enabled && "opacity-50")}>
                   <span className="min-w-0 flex-1 text-[10px] font-medium text-white/40 truncate">{roomSettings.chat_enabled ? "Say something..." : "Chat disabled"}</span>
                   <Smile className="h-3 w-3 shrink-0" style={{ color: primaryThemeColor }} />
                 </div>
@@ -371,7 +409,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>{micOn ? <Mic className="h-4 w-4 text-emerald-400" /> : <MicOff className="h-4 w-4 text-rose-400" />}</button>
         <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}><Smile className="h-3.5 w-3.5" style={{ color: primaryThemeColor }} /></button>
         <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Games" aria-expanded={gamesOpen}><Gamepad2 className="h-3.5 w-3.5" style={{ color: accentThemeColor }} /></button>
-        <button type="button" onClick={tap(() => setPrivateChatOpen(true))} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-cyan-400/50 bg-cyan-500/20 text-cyan-300 shadow-md")} aria-label="Private Chat"><MessageCircle className="h-4 w-4" /></button>
+        <button type="button" onClick={tap(() => { closeRoomSheets(); setPrivateChatOpen(true); })} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-cyan-400/50 bg-cyan-500/20 text-cyan-300 shadow-md")} aria-label="Private Chat"><MessageCircle className="h-4 w-4" /></button>
         <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-10 w-10 place-items-center rounded-2xl p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-white/40 disabled:opacity-40")} style={{ background: `linear-gradient(135deg, ${primaryThemeColor}, ${accentThemeColor})` }} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}>
           <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="grid h-full w-full place-items-center rounded-[12px] bg-black/60  text-amber-200"><Gift className="h-4.5 w-4.5 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ color: primaryThemeColor }} /></div>
