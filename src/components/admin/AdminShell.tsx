@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { type LucideIcon, LayoutDashboard, Users, DoorOpen, Image as ImageIcon, Radio, Trophy, Coins, Store, Wallet, CreditCard, ArrowUpFromLine, Handshake, Gift as GiftIcon, Megaphone, GalleryHorizontal, FileText, LifeBuoy, Flag, ScrollText, Sparkles, Plug, Settings, ShieldCheck, Palette, FolderTree, Crown, UserCog, LogOut, BarChart3, Heart, PiggyBank, UserPlus, Bell, ImagePlus, Download, Dices, Database, Trash2, Wand2, Server } from "lucide-react";
+import { type LucideIcon, Headphones, LayoutDashboard, Users, DoorOpen, Image as ImageIcon, Radio, Trophy, Coins, Store, Wallet, CreditCard, ArrowUpFromLine, Handshake, Gift as GiftIcon, Megaphone, GalleryHorizontal, FileText, LifeBuoy, Flag, ScrollText, Sparkles, Plug, Settings, ShieldCheck, Palette, FolderTree, Crown, UserCog, LogOut, BarChart3, Heart, PiggyBank, UserPlus, Bell, ImagePlus, Download, Dices, Database, Trash2, Wand2, Server } from "lucide-react";
 import type { ReactNode } from "react";
 import { AdminNotificationsBell } from "@/components/admin/AdminNotificationsBell";
 import { useAuth } from "@/hooks/useAuth";
