@@ -258,7 +258,7 @@ main[data-jalwa-voice-room-root="true"]{
   flex:0 0 auto!important;
   padding-top:max(4px,env(safe-area-inset-top,0px))!important;
 }
-[data-jalwa-voice-room-root="true"]>[data-jalwa-live-component="voice.bottom-nav"]{
+[data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.bottom-nav"]{
   position:relative!important;
   bottom:auto!important;
   flex:0 0 calc(54px + env(safe-area-inset-bottom,0px))!important;
