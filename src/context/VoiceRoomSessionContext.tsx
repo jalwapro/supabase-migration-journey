@@ -18,22 +18,20 @@ export function VoiceRoomSessionProvider({ children }: { children: React.ReactNo
     window.dispatchEvent(new CustomEvent('jalwa:voice-room-minimized', { detail: next }));
   }, [user?.id]);
   const restoreRoom = useCallback(() => setActiveRoom(r => r ? { ...r, isMinimized: false } : r), []);
-  const clearRoom = useCallback(() => {
-    // Persist the explicit exit before navigating so stale room state cannot
-    // redirect the user back into the room or recreate its minimized popup.
-    if (activeRoom?.roomId && activeRoom.userId) {
-      try { localStorage.setItem(EXITED_ROOM_KEY, JSON.stringify({ roomId: activeRoom.roomId, userId: activeRoom.userId, at: Date.now() })); } catch {}
+  const clearRoom = useCallback((roomId?: string, userId?: string) => {
+    // Write the exit marker using explicit route/user IDs first: React state may
+    // already be stale or null when the user taps Exit.
+    const exitedRoomId = roomId || activeRoom?.roomId;
+    const exitedUserId = userId || activeRoom?.userId || user?.id;
+    if (exitedRoomId && exitedUserId) {
+      try { localStorage.setItem(EXITED_ROOM_KEY, JSON.stringify({ roomId: exitedRoomId, userId: exitedUserId, at: Date.now() })); } catch {}
     }
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     setActiveRoom(null);
-  }, [activeRoom]);
+  }, [activeRoom, user?.id]);
   const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => {
-    if (patch.roomId && patch.userId) {
-      try {
-        const exited = JSON.parse(localStorage.getItem(EXITED_ROOM_KEY) || 'null') as { roomId?: string; userId?: string } | null;
-        if (exited?.roomId === patch.roomId && exited?.userId === patch.userId) localStorage.removeItem(EXITED_ROOM_KEY);
-      } catch {}
-    }
+    // Do not clear the explicit-exit marker here. Room route effects can race
+    // with navigation and would otherwise erase the marker before Home settles.
     setActiveRoom(r => {
       if (r) return { ...r, ...patch };
       if (patch.roomId && patch.roomRoute && patch.userId) {
