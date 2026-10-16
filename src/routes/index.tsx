@@ -793,8 +793,8 @@ function Home() {
                   {Array.from({ length: Math.max(0, 2 - topHosts.length) }).map((_, i) => (
                     <div key={`top-host-slot-${i}`} aria-hidden className="aspect-square rounded-3xl border border-white/5 bg-white/[0.02]" />
                   ))}
-                  <SupportRoomPinnedCard state={supportRoomState.data} />
                 </div>
+                <div className="mt-3"><SupportRoomPinnedCard state={supportRoomState.data} /></div>
               </div>
             )}
 
@@ -803,9 +803,9 @@ function Home() {
                 {Array.from({ length: 2 }).map((_, i) => (
                   <div key={`pinned-slot-${i}`} aria-hidden className={`aspect-square rounded-3xl ${isRoomsLoading ? "bg-white/5" : "border border-white/5 bg-white/[0.02]"}`} />
                 ))}
-                <SupportRoomPinnedCard state={supportRoomState.data} />
               </div>
             )}
+            {(isRoomsLoading || topHosts.length === 0) && <div className="mt-3"><SupportRoomPinnedCard state={supportRoomState.data} /></div>}
 
             {restRooms.length > 0 && !isRoomsLoading && (
               <div>
@@ -947,23 +947,33 @@ function SupportRoomPinnedCard({ state }: { state?: { config?: { title?: string;
     <Link
       to="/support-room"
       aria-label="Open 24/7 Customer Support room"
-      className="group relative aspect-square overflow-hidden rounded-3xl border border-amber-300/40 bg-gradient-to-br from-[#3b1852] via-[#1a0b2b] to-[#080510] shadow-[0_10px_30px_-12px_rgba(251,191,36,0.55)] transition active:scale-[0.98]"
+      className="group relative flex min-h-[88px] w-full items-center gap-3 overflow-hidden rounded-2xl border border-amber-300/40 bg-gradient-to-r from-[#251142]/95 via-[#1a0b2b] to-[#120624]/95 p-2.5 shadow-[0_8px_24px_rgba(251,191,36,0.16)] transition active:scale-[0.99] hover:border-amber-300/60"
     >
-      {state?.config?.cover_url && <img src={state.config.cover_url} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-45 transition group-hover:scale-105" />}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/10" />
-      <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full border border-amber-300/30 bg-black/55 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-amber-200">
-        <Headphones className="h-3 w-3" /> Pinned #3
+      {state?.config?.cover_url && <img src={state.config.cover_url} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover opacity-20" />}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#1a0b2b]/70 to-transparent pointer-events-none" />
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-amber-300/25 bg-gradient-to-br from-[#3b1852] to-[#080510]">
+        {state?.config?.cover_url ? (
+          <img src={state.config.cover_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        ) : (
+          <div className="grid h-full w-full place-items-center"><Headphones className="h-7 w-7 text-amber-200" /></div>
+        )}
+        <span className="absolute bottom-1 left-1 rounded-full bg-black/75 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-amber-200">#3</span>
       </div>
-      <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[8px] font-black text-white">
-        <span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-400" : "bg-white/40"}`} />
-        {online ? "LIVE" : "24/7"}
+      <div className="relative min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <h3 className="line-clamp-1 text-sm font-black text-white">{title}</h3>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-300/25 bg-amber-300/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-amber-200">
+            <Headphones className="h-2.5 w-2.5" /> Support
+          </span>
+        </div>
+        <p className="mt-1 line-clamp-1 text-[11px] text-white/60">24/7 Customer Support · Tap to contact staff</p>
       </div>
-      <div className="absolute inset-x-2 bottom-3">
-        <p className="line-clamp-2 text-sm font-black leading-tight text-white">{title}</p>
-        <p className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-white/75">
-          <Users className="h-3 w-3" /> {people} in room
-        </p>
-        <p className="mt-1 text-[9px] font-bold text-amber-200">Tap to contact support</p>
+      <div className="relative flex shrink-0 flex-col items-end gap-1">
+        <span className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[10px] font-bold text-white">
+          <span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-400" : "bg-white/40"}`} />
+          {online ? "LIVE" : "24/7"}
+        </span>
+        <span className="flex items-center gap-1 text-[10px] font-semibold text-white/70"><Users className="h-3 w-3" /> {people}</span>
       </div>
     </Link>
   );
