@@ -523,6 +523,26 @@ function RoomPage() {
   const suppressNextRoomPopUntilRef = useRef(0);
 
   roomBackGuardRef.current.closeTopOverlay = () => {
+    if (chatComposerOpen) {
+      setChatComposerOpen(false);
+      setText("");
+      return true;
+    }
+    if (privateChatOpen) {
+      setPrivateChatOpen(false);
+      return true;
+    }
+    if (gamesSheetOpen || ludoOpen || slotsOpen || crashOpen || dragonTigerOpen || inOutOpen || plinkoOpen || nativeGame) {
+      setGamesSheetOpen(false);
+      setLudoOpen(false);
+      setSlotsOpen(false);
+      setCrashOpen(false);
+      setDragonTigerOpen(false);
+      setInOutOpen(false);
+      setPlinkoOpen(false);
+      setNativeGame(null);
+      return true;
+    }
     if (exitConfirmOpen) {
       setExitConfirmOpen(false);
       return true;
@@ -2511,9 +2531,24 @@ popularityPct={popularityPct}
 topGifterName={topGifters[0]?.username ?? null}
 topGifterCoins={topGifters[0]?.total_coins ?? 0}
 announcement={null}
-onOpenChat={() => setChatComposerOpen(true)}
-onOpenPrivateChat={() => setPrivateChatOpen(true)}
-onOpenGift={() => setGiftOpen(true)}
+onOpenChat={() => {
+  setGiftOpen(false);
+  setPrivateChatOpen(false);
+  setGamesSheetOpen(false);
+  setChatComposerOpen(true);
+}}
+onOpenPrivateChat={() => {
+  setGiftOpen(false);
+  setChatComposerOpen(false);
+  setGamesSheetOpen(false);
+  setPrivateChatOpen(true);
+}}
+onOpenGift={() => {
+  setChatComposerOpen(false);
+  setPrivateChatOpen(false);
+  setGamesSheetOpen(false);
+  setGiftOpen(true);
+}}
 onOpenMore={() => { if (isHost) setHostMoreOpen(true); else setVideoSettingsOpen(true); }}
 onToggleMic={() => void toggleMuteWithSync()} onOpenMusic={() => { if (!isHost && mySeatIndex == null) { toast.info("Take a seat to use room music"); return; } setMusicOpen(true); }} canPlayMusic={isHost || mySeatIndex != null} onSendEmoji={(e, targetSeatIndex) => { const target = targetSeatIndex ?? null; if (target == null) { toast.info("Pehle room mein kisi user ki DP/seat select karein"); return; } void sendEmoji(e.emoji, target, e.clip_path); }}
 onToggleSpeaker={agora.toggleSpeaker}
