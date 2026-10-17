@@ -25,6 +25,9 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    // Warm lazy route chunks when a user points to/focuses a navigation link,
+    // so the click itself does not wait for the page JavaScript to download.
+    defaultPreload: "intent",
     defaultPreloadStaleTime: 30_000,
   });
 
