@@ -75,7 +75,7 @@ export function RoomGamesSheet({
           height: isMinimized
             ? "52px"
             : activeGame
-            ? "min(50dvh, calc(100dvh - 230px))"
+            ? "calc(100dvh - 230px)"
             : "min(290px, 38dvh)",
           maxHeight: isMinimized ? "52px" : "calc(100dvh - 210px)",
         }}
