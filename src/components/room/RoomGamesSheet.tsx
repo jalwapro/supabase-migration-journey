@@ -86,7 +86,7 @@ export function RoomGamesSheet({
           isMinimized
             ? "h-[58px] p-2"
             : activeGame
-            ? "h-[min(54dvh,430px)] p-3"
+            ? "h-[min(56dvh,460px)] p-3"
             : "h-[320px] p-3"
         )}
       >
@@ -250,20 +250,22 @@ function GameFrame({
             type="button"
             onClick={onBack}
             aria-label="Back to games"
-            className="grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/10 text-white/80 hover:text-white transition active:scale-95"
+            className="flex items-center gap-1 rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-xs font-semibold text-white/80 hover:text-white transition active:scale-95"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
+            <span>Games</span>
           </button>
           <div className="flex items-center gap-1.5 px-2 truncate">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
             <p className="truncate text-xs font-black text-amber-200">{game.name}</p>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={onToggleMinimize}
               aria-label="Minimize"
               className="grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/10 text-white/80 hover:text-white transition active:scale-95"
+              title="Minimize"
             >
               <ChevronDown className="h-4 w-4" />
             </button>
@@ -271,9 +273,11 @@ function GameFrame({
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/10 text-white/80 hover:text-white transition active:scale-95"
+              className="flex items-center gap-1 rounded-full border border-rose-500/40 bg-gradient-to-r from-rose-600 to-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-md hover:from-rose-500 hover:to-red-500 transition active:scale-95"
+              title="Close game"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-3.5 w-3.5 stroke-[2.5]" />
+              <span className="text-[11px]">Close</span>
             </button>
           </div>
         </div>
@@ -284,23 +288,27 @@ function GameFrame({
     );
   }
 
-  // Iframe game container inside bottom sheet
+  // Iframe game container inside bottom sheet with fixed frame and prominent close controls
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {/* Upper control header directly above the iframe */}
       <div className="mb-2 flex shrink-0 items-center justify-between border-b border-white/10 pb-2">
         <button
           type="button"
           onClick={onBack}
           aria-label="Back to games"
-          className="grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/10 text-white/80 hover:text-white transition active:scale-95"
+          className="flex items-center gap-1 rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-xs font-semibold text-white/80 hover:text-white transition active:scale-95"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
+          <span>Games</span>
         </button>
+
         <div className="flex items-center gap-1.5 px-2 truncate">
           <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
           <p className="truncate text-xs font-black text-amber-200">{game.name}</p>
         </div>
-        <div className="flex items-center gap-1">
+
+        <div className="flex items-center gap-1.5">
           {resolvedUrl && (
             <a
               href={resolvedUrl}
@@ -327,21 +335,37 @@ function GameFrame({
             onClick={onToggleMinimize}
             aria-label="Minimize"
             className="grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/10 text-white/80 hover:text-white transition active:scale-95"
+            title="Minimize"
           >
             <ChevronDown className="h-4 w-4" />
           </button>
+          {/* Prominent top close button directly above the iframe */}
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
-            className="grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/10 text-white/80 hover:text-white transition active:scale-95"
+            aria-label="Close game"
+            className="flex items-center gap-1 rounded-full border border-rose-500/40 bg-gradient-to-r from-rose-600 to-red-600 px-2.5 py-1 text-xs font-bold text-white shadow-md shadow-rose-950/40 hover:from-rose-500 hover:to-red-500 transition active:scale-95"
+            title="Close game"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-3.5 w-3.5 stroke-[2.5]" />
+            <span className="text-[11px]">Close</span>
           </button>
         </div>
       </div>
 
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/10 bg-black shadow-inner">
+      {/* Fixed frame container: strictly isolated and sized so game fits precisely inside */}
+      <div className="relative w-full flex-1 min-h-0 overflow-hidden rounded-2xl border border-white/15 bg-black shadow-2xl isolate select-none">
+        {/* Floating top-right close button directly on the upper corner of the iframe */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close game frame"
+          className="absolute top-2.5 right-2.5 z-30 grid h-7 w-7 place-items-center rounded-full bg-black/80 border border-white/20 text-white/90 shadow-xl backdrop-blur-md hover:bg-rose-600 hover:border-rose-400 hover:text-white transition active:scale-90"
+          title="Close game"
+        >
+          <X className="h-4 w-4 stroke-[2.5]" />
+        </button>
+
         {loading && !failed && (
           <div className="absolute inset-0 z-10 grid place-items-center bg-black/60 backdrop-blur-[2px]">
             <div className="flex flex-col items-center gap-2">
@@ -389,9 +413,16 @@ function GameFrame({
             key={reloadKey}
             src={resolvedUrl}
             title={game.name}
-            className="h-full w-full border-0 bg-transparent"
-            style={{ width: "100%", height: "100%", display: "block" }}
-            allow="autoplay; fullscreen; gamepad; clipboard-write; camera; microphone"
+            className="absolute inset-0 h-full w-full border-0 bg-black"
+            style={{
+              width: "100%",
+              height: "100%",
+              border: 0,
+              display: "block",
+              touchAction: "manipulation",
+              overscrollBehavior: "contain",
+            }}
+            allow="autoplay; fullscreen; gamepad; clipboard-write; camera; microphone; screen-wake-lock"
             loading="eager"
             onLoad={() => setLoading(false)}
             onError={() => {
