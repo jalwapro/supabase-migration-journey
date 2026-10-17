@@ -86,8 +86,8 @@ const GiftGrid = memo(function GiftGrid({
   const scrollLeftRef = useRef(0);
 
   return (
-    <div ref={gridRef} onScroll={(e) => { scrollLeftRef.current = e.currentTarget.scrollLeft; }} className="flex-1 overflow-x-auto overflow-y-hidden px-3 py-2 no-scrollbar scroll-smooth">
-      <div className="grid h-full grid-flow-col grid-rows-2 auto-cols-[calc((100vw-42px)/4)] sm:auto-cols-[calc((100%-42px)/4)] gap-2">
+    <div ref={gridRef} onScroll={(e) => { scrollLeftRef.current = e.currentTarget.scrollLeft; }} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 no-scrollbar scroll-smooth overscroll-contain">
+      <div className="grid w-full grid-cols-4 auto-rows-[112px] gap-2">
         {gifts.map((g) => {
           const isSelected = selectedGiftId === g.id;
           const isLocked = g.is_cp && (g.required_cp_level ?? 1) > userCpLevel;
