@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { X, Sparkles, ArrowLeft, Loader2, AlertTriangle, ChevronDown, Maximize2 } from "lucide-react";
 import { useRoomGames, NATIVE_GAME_EMOJI, type RoomGame } from "@/lib/roomGames";
 import { NativeGamePopup } from "@/components/room/NativeGamePopup";
 import { cn } from "@/lib/utils";
 
 /**
- * Voice Room Games popup.
- * Docked cleanly ABOVE the room bottom navigation bar/footer.
- * Constrained height so the Room Header and Upper 4 Seats remain 100% visible,
- * with no heavy backdrop blur obstructing the room stage.
+ * Voice Room Games Sheet.
+ * Designed to match GiftSheet's layout:
+ * - Docked cleanly at the bottom over the room footer
+ * - Compact height (h-[340px]) keeping the Room Header and Upper 4 Seats fully visible
+ * - Clean slide-up animation and dark backdrop
  */
 export function RoomGamesSheet({
   open,
@@ -18,13 +18,13 @@ export function RoomGamesSheet({
 }: {
   open: boolean;
   onClose: () => void;
-  onOpenNative: (slug: string) => void;
+  onOpenNative?: (slug: string) => void;
 }) {
   const games = useRoomGames();
   const [activeGame, setActiveGame] = useState<RoomGame | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
 
-  if (!open || typeof document === "undefined") return null;
+  if (!open) return null;
 
   const close = () => {
     setActiveGame(null);
@@ -36,56 +36,30 @@ export function RoomGamesSheet({
     setIsMinimized(false);
     if (game.kind === "native") {
       setActiveGame(game);
+      onOpenNative?.(game.slug);
       return;
     }
-    if (game.game_url) setActiveGame(game);
+    if (game.game_url) {
+      setActiveGame(game);
+    }
   };
 
-  // Footer toolbar height in VoiceRoomScreen:
-  // calc(54px + max(var(--safe-area-inset-bottom, 0px), var(--jalwa-safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 16px))
-  const footerClearanceStyle = "calc(54px + max(var(--safe-area-inset-bottom, 0px), var(--jalwa-safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 16px))";
-  const sheetBottomStyle = `calc(${footerClearanceStyle} + 6px)`;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[2147483001] pointer-events-auto" data-jalwa-games-root="true">
-      {/* Light backdrop with NO blur, positioned above the footer so footer buttons stay clickable */}
-      <button
-        type="button"
-        aria-label="Close games"
-        className={cn(
-          "absolute inset-x-0 top-0 cursor-default transition-opacity",
-          isMinimized ? "bg-transparent pointer-events-none" : "bg-black/25"
-        )}
-        style={{
-          bottom: footerClearanceStyle,
-        }}
-        onClick={close}
-      />
-
+  return (
+    <div
+      className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/50 p-0 transition-opacity"
+      onClick={close}
+      data-jalwa-games-root="true"
+    >
       <section
         role="dialog"
         aria-modal="true"
         aria-label="Games"
-        className={cn(
-          "absolute left-1/2 flex w-[calc(100%-12px)] max-w-[480px] -translate-x-1/2 flex-col rounded-3xl border border-white/15 bg-[#120a1f]/95 text-white shadow-2xl backdrop-blur-xl transition-all duration-300 ease-out",
-          isMinimized ? "p-2.5 shadow-purple-900/30" : "p-3.5"
-        )}
-        style={{
-          bottom: sheetBottomStyle,
-          height: isMinimized
-            ? "52px"
-            : activeGame
-            ? "min(50dvh, calc(100dvh - 230px))"
-            : "min(290px, 38dvh)",
-          maxHeight: isMinimized ? "52px" : "calc(100dvh - 210px)",
-        }}
         onClick={(event) => event.stopPropagation()}
-      >
-        {/* Subtle drag handle on non-minimized sheet */}
-        {!isMinimized && (
-          <div className="mx-auto mb-1.5 h-1 w-10 shrink-0 rounded-full bg-white/20" />
+        className={cn(
+          "relative flex w-full max-w-lg flex-col overflow-hidden rounded-t-[24px] border border-white/10 bg-[#120a1f]/95 text-white shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom duration-200",
+          isMinimized ? "h-[58px] p-2" : "h-[340px] p-3"
         )}
-
+      >
         {activeGame ? (
           <GameFrame
             game={activeGame}
@@ -99,11 +73,17 @@ export function RoomGamesSheet({
           />
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
-            <div className="mb-2 flex shrink-0 items-center justify-between">
-              <h2 className="flex items-center gap-2 text-sm font-extrabold text-amber-200">
-                <Sparkles className="h-4 w-4 text-[color:var(--gold,#f59e0b)]" />
-                Jalwa Games
-              </h2>
+            {/* Header */}
+            <div className="mb-2 flex shrink-0 items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black bg-gradient-to-r from-pink-400 to-violet-500 bg-clip-text text-transparent">
+                  Jalwa
+                </span>
+                <h2 className="flex items-center gap-1.5 text-xs font-black text-amber-200">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                  Room Games
+                </h2>
+              </div>
               <button
                 type="button"
                 onClick={close}
@@ -116,19 +96,19 @@ export function RoomGamesSheet({
 
             {games.isLoading && (
               <div className="grid flex-1 place-items-center py-6">
-                <Loader2 className="h-6 w-6 animate-spin text-[color:var(--gold,#f59e0b)]" />
+                <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
               </div>
             )}
 
             {!games.isLoading && games.data?.length === 0 && (
-              <p className="py-6 text-center text-xs text-white/50">
+              <p className="py-8 text-center text-xs text-white/50">
                 No games available right now.
               </p>
             )}
 
             {!games.isLoading && !!games.data?.length && (
               <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                <div className="grid w-full grid-cols-4 auto-rows-[90px] gap-2 pb-1">
+                <div className="grid w-full grid-cols-4 auto-rows-[82px] gap-2 pb-1">
                   {games.data.map((game) => {
                     const icon = game.icon_url ?? game.thumb_url;
                     return (
@@ -136,17 +116,17 @@ export function RoomGamesSheet({
                         key={game.id}
                         type="button"
                         onClick={() => pickGame(game)}
-                        className="group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 text-center transition-all hover:bg-white/10 active:scale-[0.96]"
+                        className="group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-1.5 text-center transition-all hover:bg-white/10 active:scale-[0.96]"
                       >
                         <div className="absolute -right-4 -top-4 h-12 w-12 rounded-full bg-purple-500/20 blur-xl group-hover:bg-purple-500/30 transition-colors" />
-                        <div className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-white/10 bg-black/40 text-xl shadow-inner">
+                        <div className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl border border-white/10 bg-black/40 text-lg shadow-inner">
                           {icon ? (
                             <img src={icon} alt={game.name} className="h-full w-full object-cover" loading="lazy" />
                           ) : (
                             <span>{NATIVE_GAME_EMOJI[game.slug] ?? "🎮"}</span>
                           )}
                         </div>
-                        <p className="relative mt-1.5 w-full truncate text-[10.5px] font-bold text-white/90">
+                        <p className="relative mt-1 w-full truncate text-[10px] font-bold text-white/90">
                           {game.name}
                         </p>
                       </button>
@@ -158,8 +138,7 @@ export function RoomGamesSheet({
           </div>
         )}
       </section>
-    </div>,
-    document.body,
+    </div>
   );
 }
 
@@ -179,14 +158,14 @@ function GameFrame({
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
-  // Minimized floating strip view
+  // Minimized floating strip view at bottom of screen
   if (isMinimized) {
     return (
       <div className="flex h-full w-full items-center justify-between px-1">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-purple-600/30 text-sm border border-purple-400/30">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-purple-600/30 text-base border border-purple-400/30">
             {game.icon_url ? (
-              <img src={game.icon_url} alt="" className="h-full w-full object-cover rounded-lg" />
+              <img src={game.icon_url} alt="" className="h-full w-full object-cover rounded-xl" />
             ) : (
               <span>{NATIVE_GAME_EMOJI[game.slug] ?? "🎮"}</span>
             )}
@@ -221,7 +200,7 @@ function GameFrame({
     );
   }
 
-  // Native game popup container
+  // Native game view container
   if (game.kind === "native") {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
@@ -264,7 +243,7 @@ function GameFrame({
     );
   }
 
-  // Iframe game container (Docked cleanly in lower portion of room)
+  // Iframe game container inside bottom sheet
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-2 flex shrink-0 items-center justify-between border-b border-white/10 pb-2">
@@ -304,7 +283,7 @@ function GameFrame({
         {loading && !failed && (
           <div className="absolute inset-0 z-10 grid place-items-center bg-black/60 backdrop-blur-[2px]">
             <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-6 w-6 animate-spin text-[color:var(--gold,#f59e0b)]" />
+              <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
               <span className="text-[10px] text-white/60">Loading game...</span>
             </div>
           </div>

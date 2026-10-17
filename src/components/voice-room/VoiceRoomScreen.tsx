@@ -220,6 +220,12 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
     setGamesOpen(true);
     onOpenGames?.();
   };
+  const openPrivateChatModal = (e?: React.SyntheticEvent) => {
+    e?.preventDefault(); e?.stopPropagation();
+    closeRoomSheets();
+    setPrivateChatOpen(true);
+    onOpenPrivateChat?.();
+  };
   const openPopularity = () => { closeRoomSheets(); setPopularityOpen(true); };
   const openMoreForRole = () => {
     closeRoomSheets();
@@ -410,7 +416,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>{micOn ? <Mic className="h-4 w-4 text-emerald-400" /> : <MicOff className="h-4 w-4 text-rose-400" />}</button>
         {mySeatIndex != null && <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}><Smile className="h-3.5 w-3.5" style={{ color: primaryThemeColor }} /></button>}
         <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Games" aria-expanded={gamesOpen}><Gamepad2 className="h-3.5 w-3.5" style={{ color: accentThemeColor }} /></button>
-        <button type="button" onClick={tap(() => { closeRoomSheets(); setPrivateChatOpen(true); })} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-cyan-400/50 bg-cyan-500/20 text-cyan-300 shadow-md")} aria-label="Private Chat"><MessageCircle className="h-4 w-4" /></button>
+        <button type="button" onClick={tap(openPrivateChatModal)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-cyan-400/50 bg-cyan-500/20 text-cyan-300 shadow-md")} aria-label="Private Chat" aria-expanded={privateChatOpen}><MessageCircle className="h-4 w-4" /></button>
         <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-10 w-10 place-items-center rounded-2xl p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-white/40 disabled:opacity-40")} style={{ background: `linear-gradient(135deg, ${primaryThemeColor}, ${accentThemeColor})` }} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}>
           <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="grid h-full w-full place-items-center rounded-[12px] bg-black/60  text-amber-200"><Gift className="h-4.5 w-4.5 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" style={{ color: primaryThemeColor }} /></div>
@@ -419,7 +425,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         <button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label={isHost ? "Host Room Settings" : isModerator ? "Moderator Controls" : "More"}>{isHost ? <Shield className="h-3.5 w-3.5" style={{ color: primaryThemeColor }} /> : isModerator ? <Shield className="h-3.5 w-3.5 text-cyan-400" /> : <Grid2X2 className="h-3.5 w-3.5 text-white" />}</button>
       </nav>
 
-      <JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />
+      {privateChatOpen && <JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />}
 
       {showMiniInputPopup && (
         <div className="absolute inset-0 z-[2147483500] flex items-end justify-center bg-black/30 animate-fade-in p-0" onClick={() => setShowMiniInputPopup(false)}>

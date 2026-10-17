@@ -2583,7 +2583,6 @@ onOpenGames={() => setGamesSheetOpen(true)}
 <HostRoomMoreSheet open={hostMoreOpen} onClose={() => setHostMoreOpen(false)} seatCount={r.seat_count} maxSeats={20} onSeats={async (next) => { if (!isHost) return; const occupied=members.filter((m)=>m.seat_index!=null).length; if(next<occupied){toast.error(`Cannot reduce seats below ${occupied} occupied seats`);return;} const {error}=await supabase.rpc("update_voice_room_seat_count",{_room_id:roomId,_seat_count:next}); if(error){toast.error(error.message);return;} setHostMoreOpen(false); await room.refetch(); }} onMusic={() => {setHostMoreOpen(false);setMusicOpen(true)}} onSettings={() => {setHostMoreOpen(false);setVideoSettingsOpen(true)}} onInvite={() => {setHostMoreOpen(false);setInviteOpen(true)}} onRanking={() => {setHostMoreOpen(false);void navigate({to:"/rank"})}} />
 <InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} roomUrl={typeof window === "undefined" ? "" : window.location.href} roomTitle={(r as { name?: string | null }).name ?? "JALWA Voice Room"} />
 
-<JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />
 
 {chatComposerOpen && (
 <div
