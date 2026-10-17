@@ -1,6 +1,8 @@
 const CACHE_ASSETS = "jalwa-assets-v1"; // Must match src/lib/assetCache.ts
 const CACHE_LEGACY_ASSETS = "jalwa-assets-v2"; // Preserve assets cached by older workers
 const CACHE_SHELL = "jalwa-shell-v2";
+const CACHE_PUBLIC_DATA = "jalwa-public-data-v1";
+const PUBLIC_MANIFEST_PATH = "/api/public/asset-manifest";
 
 // Static assets regex: JS chunks, CSS, fonts, images, audio, video
 const MANAGED_MEDIA = /\.(mp4|webm|mov|svga|svg|png|jpe?g|gif|webp|avif|mp3|wav|ogg|m4a)(\?.*)?$/i;
@@ -49,7 +51,7 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_ASSETS && key !== CACHE_LEGACY_ASSETS && key !== CACHE_SHELL) {
+          if (key !== CACHE_ASSETS && key !== CACHE_LEGACY_ASSETS && key !== CACHE_SHELL && key !== CACHE_PUBLIC_DATA) {
             return caches.delete(key);
           }
         })
