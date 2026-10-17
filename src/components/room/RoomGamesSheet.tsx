@@ -98,8 +98,8 @@ export function RoomGamesSheet({
             )}
 
             {!games.isLoading && !!games.data?.length && (
-              <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                <div className="grid h-full min-w-full auto-cols-[calc(25%-8px)] grid-flow-col grid-rows-2 gap-2.5">
+              <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <div className="grid w-full grid-cols-4 auto-rows-[96px] gap-2.5 pb-1">
                   {games.data.map((game) => {
                     const icon = game.icon_url ?? game.thumb_url;
                     return (
