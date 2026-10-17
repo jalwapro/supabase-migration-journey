@@ -1,16 +1,46 @@
-import { useState } from "react";
-import { X, Sparkles, ArrowLeft, Loader2, AlertTriangle, ChevronDown, Maximize2 } from "lucide-react";
-import { useRoomGames, NATIVE_GAME_EMOJI, type RoomGame } from "@/lib/roomGames";
+import { useState, useMemo, useEffect } from "react";
+import {
+  X,
+  Sparkles,
+  ArrowLeft,
+  Loader2,
+  AlertTriangle,
+  ChevronDown,
+  Maximize2,
+  ExternalLink,
+  RotateCw,
+} from "lucide-react";
+import { useRoomGames, type RoomGame } from "@/lib/roomGames";
 import { NativeGamePopup } from "@/components/room/NativeGamePopup";
 import { cn } from "@/lib/utils";
 
-/**
- * Voice Room Games Sheet.
- * Designed to match GiftSheet's layout:
- * - Docked cleanly at the bottom over the room footer
- * - Compact height (h-[340px]) keeping the Room Header and Upper 4 Seats fully visible
- * - Clean slide-up animation and dark backdrop
- */
+const NATIVE_GAME_EMOJI: Record<string, string> = {
+  ludo: "🎲",
+  slots777: "🎰",
+  royal_jalwa_slots: "👑",
+  crash_x: "🚀",
+  dragon_tiger: "🐉",
+  in_out: "🃏",
+  plinko: "⚪",
+  under_over_7: "🎲",
+  crash_point: "📈",
+  scratch_card: "🎟️",
+  apple_fortune: "🍎",
+  spin_win: "🎡",
+  vampire_curse: "🧛",
+};
+
+function resolveGameUrl(url: string | null | undefined, slug?: string): string {
+  if (!url || !url.trim()) {
+    if (slug) return `/games/play/${slug}`;
+    return "";
+  }
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("/")) return trimmed;
+  return `https://${trimmed}`;
+}
+
 export function RoomGamesSheet({
   open,
   onClose,
@@ -20,9 +50,10 @@ export function RoomGamesSheet({
   onClose: () => void;
   onOpenNative?: (slug: string) => void;
 }) {
-  const games = useRoomGames();
   const [activeGame, setActiveGame] = useState<RoomGame | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
+
+  const games = useRoomGames();
 
   if (!open) return null;
 
@@ -34,21 +65,16 @@ export function RoomGamesSheet({
 
   const pickGame = (game: RoomGame) => {
     setIsMinimized(false);
-    if (game.kind === "native") {
-      setActiveGame(game);
-      onOpenNative?.(game.slug);
-      return;
-    }
-    if (game.game_url) {
-      setActiveGame(game);
+    setActiveGame(game);
+    if (game.kind === "native" && onOpenNative) {
+      onOpenNative(game.slug);
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/50 p-0 transition-opacity"
+      className="fixed inset-0 z-[2147482900] flex items-end justify-center bg-black/40 p-0 transition-opacity"
       onClick={close}
-      data-jalwa-games-root="true"
     >
       <section
         role="dialog"
@@ -57,9 +83,15 @@ export function RoomGamesSheet({
         onClick={(event) => event.stopPropagation()}
         className={cn(
           "relative flex w-full max-w-lg flex-col overflow-hidden rounded-t-[24px] border border-white/10 bg-[#120a1f]/95 text-white shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom duration-200",
-          isMinimized ? "h-[58px] p-2" : "h-[340px] p-3"
+          isMinimized
+            ? "h-[58px] p-2"
+            : activeGame
+            ? "h-[min(54dvh,430px)] p-3"
+            : "h-[320px] p-3"
         )}
       >
+        <div className="mx-auto mb-2 h-1 w-10 shrink-0 rounded-full bg-white/20" />
+
         {activeGame ? (
           <GameFrame
             game={activeGame}
@@ -73,16 +105,10 @@ export function RoomGamesSheet({
           />
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
-            {/* Header */}
-            <div className="mb-2 flex shrink-0 items-center justify-between border-b border-white/10 pb-2">
+            <div className="mb-2.5 flex shrink-0 items-center justify-between border-b border-white/10 pb-2">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black bg-gradient-to-r from-pink-400 to-violet-500 bg-clip-text text-transparent">
-                  Jalwa
-                </span>
-                <h2 className="flex items-center gap-1.5 text-xs font-black text-amber-200">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                  Room Games
-                </h2>
+                <Sparkles className="h-4 w-4 text-amber-400" />
+                <h2 className="text-sm font-extrabold tracking-wide text-white">Room Games</h2>
               </div>
               <button
                 type="button"
@@ -95,18 +121,18 @@ export function RoomGamesSheet({
             </div>
 
             {games.isLoading && (
-              <div className="grid flex-1 place-items-center py-6">
+              <div className="flex min-h-0 flex-1 items-center justify-center py-6">
                 <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
               </div>
             )}
 
-            {!games.isLoading && games.data?.length === 0 && (
-              <p className="py-8 text-center text-xs text-white/50">
-                No games available right now.
-              </p>
+            {!games.isLoading && (!games.data || games.data.length === 0) && (
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 text-center">
+                <p className="text-xs text-white/60">No games available right now.</p>
+              </div>
             )}
 
-            {!games.isLoading && !!games.data?.length && (
+            {!games.isLoading && games.data && games.data.length > 0 && (
               <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <div className="grid w-full grid-cols-4 auto-rows-[82px] gap-2 pb-1">
                   {games.data.map((game) => {
@@ -155,8 +181,23 @@ function GameFrame({
   onBack: () => void;
   onClose: () => void;
 }) {
+  const resolvedUrl = useMemo(() => resolveGameUrl(game.game_url, game.slug), [game.game_url, game.slug]);
+  const isNative = game.kind === "native" && Boolean(NATIVE_GAME_EMOJI[game.slug]);
+
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  // Safeguard: Dismiss loading overlay after 2.5s even if cross-origin iframe
+  // suppresses onload event, preventing permanent spinner overlay.
+  useEffect(() => {
+    setLoading(true);
+    setFailed(false);
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [resolvedUrl, reloadKey]);
 
   // Minimized floating strip view at bottom of screen
   if (isMinimized) {
@@ -201,7 +242,7 @@ function GameFrame({
   }
 
   // Native game view container
-  if (game.kind === "native") {
+  if (isNative) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="mb-2 flex shrink-0 items-center justify-between border-b border-white/10 pb-2">
@@ -260,6 +301,27 @@ function GameFrame({
           <p className="truncate text-xs font-black text-amber-200">{game.name}</p>
         </div>
         <div className="flex items-center gap-1">
+          {resolvedUrl && (
+            <a
+              href={resolvedUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open in new window"
+              className="grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/10 text-white/80 hover:text-white transition active:scale-95"
+              title="Open full screen"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            aria-label="Reload game"
+            className="grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/10 text-white/80 hover:text-white transition active:scale-95"
+            title="Reload game"
+          >
+            <RotateCw className="h-3.5 w-3.5" />
+          </button>
           <button
             type="button"
             onClick={onToggleMinimize}
@@ -288,31 +350,49 @@ function GameFrame({
             </div>
           </div>
         )}
+
         {failed && (
-          <div className="absolute inset-0 z-10 grid place-items-center p-6 text-center">
+          <div className="absolute inset-0 z-10 grid place-items-center p-6 text-center bg-black/80">
             <div>
               <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-amber-400" />
-              <p className="text-xs text-white/70">Couldn't load this game.</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setFailed(false);
-                  setLoading(true);
-                }}
-                className="mt-2 text-[11px] font-bold text-amber-300 underline"
-              >
-                Retry
-              </button>
+              <p className="text-xs text-white/70">Couldn't load game inside room.</p>
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFailed(false);
+                    setLoading(true);
+                    setReloadKey((k) => k + 1);
+                  }}
+                  className="rounded-xl bg-white/10 px-3 py-1.5 text-[11px] font-bold text-amber-300 hover:bg-white/20 transition active:scale-95"
+                >
+                  Retry
+                </button>
+                {resolvedUrl && (
+                  <a
+                    href={resolvedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 rounded-xl bg-purple-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-purple-500 transition active:scale-95"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Open Game
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         )}
+
         {!failed && (
           <iframe
-            src={game.game_url ?? ""}
+            key={reloadKey}
+            src={resolvedUrl}
             title={game.name}
             className="h-full w-full border-0 bg-transparent"
-            allow="autoplay; fullscreen; gamepad; clipboard-write"
-            sandbox="allow-scripts allow-same-origin allow-pointer-lock allow-forms allow-popups"
+            style={{ width: "100%", height: "100%", display: "block" }}
+            allow="autoplay; fullscreen; gamepad; clipboard-write; camera; microphone"
+            loading="eager"
             onLoad={() => setLoading(false)}
             onError={() => {
               setLoading(false);
