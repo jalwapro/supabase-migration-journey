@@ -52,15 +52,15 @@ export function RoomGamesSheet({
         role="dialog"
         aria-modal="true"
         aria-label="Games"
-        className="absolute bottom-0 left-1/2 flex w-full max-w-[480px] -translate-x-1/2 flex-col rounded-t-3xl border border-white/10 bg-card p-4 shadow-2xl"
+        className={`absolute bottom-0 left-1/2 flex w-full max-w-[480px] -translate-x-1/2 flex-col border border-white/10 bg-card shadow-2xl ${activeGame ? "rounded-none border-0 p-0" : "rounded-t-3xl p-4"}`}
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)",
-          height: activeGame ? "85dvh" : "280px",
-          maxHeight: "85dvh",
+          paddingBottom: activeGame ? "env(safe-area-inset-bottom)" : "calc(env(safe-area-inset-bottom) + 16px)",
+          height: activeGame ? "100dvh" : "280px",
+          maxHeight: activeGame ? "100dvh" : "85dvh",
         }}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="mx-auto mb-2 h-1 w-10 shrink-0 rounded-full bg-white/20" />
+        {!activeGame && <div className="mx-auto mb-2 h-1 w-10 shrink-0 rounded-full bg-white/20" />}
 
         {activeGame ? (
           <GameFrame
@@ -70,7 +70,7 @@ export function RoomGamesSheet({
           />
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
-            <div className="mb-3 flex shrink-0 items-center justify-between">
+            <div className="mb-3 flex shrink-0 items-center justify-between px-4 pt-3">
               <h2 className="flex items-center gap-2 text-base font-extrabold">
                 <Sparkles className="h-4 w-4 text-[color:var(--gold)]" />
                 Games
@@ -147,7 +147,7 @@ function GameFrame({
   if (game.kind === "native") {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="mb-2 flex shrink-0 items-center justify-between">
+        <div className="mb-2 flex shrink-0 items-center justify-between px-4 pt-3">
           <button
             type="button"
             onClick={onBack}
@@ -195,7 +195,7 @@ function GameFrame({
         </button>
       </div>
 
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-white/10 bg-black">
+      <div className="relative min-h-0 flex-1 overflow-hidden border-t border-white/10 bg-black">
         {loading && !failed && (
           <div className="absolute inset-0 z-10 grid place-items-center bg-black/40">
             <Loader2 className="h-7 w-7 animate-spin text-[color:var(--gold)]" />
