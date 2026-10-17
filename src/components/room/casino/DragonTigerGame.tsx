@@ -62,21 +62,19 @@ export function DragonTigerGame({
         // 24 Hours check
         const lastCheatTime = localStorage.getItem("last_cheat_time");
         const now = Date.now();
-        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+        const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
         if (lastCheatTime && (now - parseInt(lastCheatTime) < TWENTY_FOUR_HOURS)) {
-          // Agar 24 ghante pure nahi hue, toh stealth error show karein
           haptic(20);
           toast.error("Error: Code 24", {
-            style: { fontSize: "11px", opacity: 0.6 } // Chota aur halka sa error
+            style: { fontSize: "11px", opacity: 0.6 }
           });
-          return 0; // Taps reset kar dein
+          return 0;
         }
 
-        // Agar 24 ghante guzar chuke hain, ya pehli dafa hai
-        haptic(50); // Vibration
-        setCheatActive(true); // Cheat on
-        return 0; // Taps reset
+        haptic(50);
+        setCheatActive(true);
+        return 0;
       }
       return newTaps;
     });
@@ -92,12 +90,8 @@ export function DragonTigerGame({
     try {
       const payloadParams: any = { pick };
       
-      // Agar cheat active hai toh key attach karo aur time save karo
       if (cheatActive) {
         payloadParams.cheatKey = "CONFIRM_WIN_777";
-        // Backend user ki "pick" dekh kar usko jeetwa dega
-        
-        // Current time localStorage mein save kar lein 24h limit ke liye
         localStorage.setItem("last_cheat_time", Date.now().toString());
       }
 
@@ -169,17 +163,114 @@ export function DragonTigerGame({
           <Card side="tiger" rank={result?.tiger_card} flipping={flipping} />
         </div>
 
-        {/* Picks */}
         <div className="mt-3 grid grid-cols-3 gap-2">
           <PickBtn label="DRAGON" odds={sideOdds} color="#4aa3ff" active={pick === "dragon"} onClick={() => setPick("dragon")} />
           <PickBtn label="TIE" odds={tieOdds} color="#39d98a" active={pick === "tie"} onClick={() => setPick("tie")} />
           <PickBtn label="TIGER" odds={sideOdds} color="#ff7a3d" active={pick === "tiger"} onClick={() => setPick("tiger")} />
         </div>
 
-        {/* ... (Result, History, aur Winners UI) ... */}
+        {result && (
+          <p
+            className={`mt-3 rounded-xl border px-3 py-2 text-center text-xs font-black ${
+              result.won
+                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
+                : "border-red-500/40 bg-red-500/10 text-red-300"
+            }`}
+          >
+            {String(result.winner).toUpperCase()} wins ·{" "}
+            {result.won ? `+${formatCompact(result.payout)}` : `-${formatCompact(result.bet)}`}
+          </p>
+        )}
+
+        {/* History */}
+        <div className="mt-3">
+          <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-foreground/50">History</p>
+          <div className="flex gap-1 overflow-x-auto">
+            {history.length === 0 && <span className="text-[10px] text-foreground/40">No rounds yet</span>}
+            {history.map((h, i) => (
+              <span
+                key={i}
+                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-black text-white ${
+                  h === "dragon" ? "bg-[#2563eb]" : h === "tiger" ? "bg-[#ea580c]" : "bg-emerald-600"
+                }`}
+              >
+                {h === "dragon" ? "D" : h === "tiger" ? "T" : "="}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Winners */}
+        <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-2.5">
+          <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-foreground/50">Recent winners</p>
+          {(recent.data ?? []).slice(0, 4).map((w, i) => (
+            <div key={i} className="flex items-center justify-between py-0.5 text-[11px]">
+              <span className="truncate text-foreground/70">{w.username}</span>
+              <span className="font-black text-[color:var(--gold)]">+{formatCompact(w.payout)}</span>
+            </div>
+          ))}
+          {(recent.data ?? []).length === 0 && (
+            <p className="text-[10px] text-foreground/40">Be the first winner.</p>
+          )}
+        </div>
       </div>
     </CasinoPopupShell>
   );
 }
 
-// ... Card and PickBtn components
+function Card({ side, rank, flipping }: { side: "dragon" | "tiger"; rank?: number; flipping: boolean }) {
+  const color = side === "dragon" ? "#4aa3ff" : "#ff7a3d";
+  return (
+    <div className="text-center">
+      <p className="mb-1 text-[10px] font-black uppercase tracking-widest" style={{ color }}>
+        {side}
+      </p>
+      <div
+        className="mx-auto grid h-28 w-20 place-items-center rounded-xl border-2 bg-black/60 text-3xl font-black transition-transform duration-500"
+        style={{
+          borderColor: color,
+          boxShadow: `0 0 26px -8px ${color}`,
+          transform: flipping ? "rotateY(180deg)" : "rotateY(0deg)",
+          color,
+        }}
+      >
+        {flipping || !rank ? (
+          <span className="text-2xl">{side === "dragon" ? "🐉" : "🐅"}</span>
+        ) : (
+          (rank >= 1 && rank <= 13) ? RANKS[rank - 1] : "?"
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PickBtn({
+  label,
+  odds,
+  color,
+  active,
+  onClick,
+}: {
+  label: string;
+  odds: number;
+  color: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-2xl border-2 py-2.5 text-center transition active:scale-95"
+      style={{
+        borderColor: active ? color : "rgba(255,255,255,0.12)",
+        background: active ? `color-mix(in oklab, ${color} 20%, transparent)` : "rgba(255,255,255,0.04)",
+        boxShadow: active ? `0 0 22px -6px ${color}` : undefined,
+      }}
+    >
+      <p className="text-[11px] font-black" style={{ color: active ? color : undefined }}>
+        {label}
+      </p>
+      <p className="text-[10px] font-bold text-foreground/60">{odds.toFixed(2)}x</p>
+    </button>
+  );
+}
