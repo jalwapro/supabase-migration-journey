@@ -365,12 +365,12 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
           
           <div data-jalwa-live-component="voice.announcement" className="shrink-0 flex flex-col gap-1 px-2 pb-0.5">
             <section data-voice-room-lower-panel="true" className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
-              <div className="flex min-w-0 max-h-[190px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50  shadow-xl">
+              <div className="flex min-w-0 max-h-[190px] flex-col overflow-hidden rounded-xl border border-white/10 bg-gradient-to-t from-black/45 via-black/20 to-black/5 shadow-none backdrop-blur-[2px]">
                 <div className="flex h-6 shrink-0 items-center gap-1.5 border-b border-white/10 px-2 bg-amber-500/10 text-amber-200">
                   <span className="text-[10px]">📢</span>
                   <p className="text-[9px] font-semibold truncate flex-1">{announcement || "Welcome to the room! Follow rules."}</p>
                 </div>
-                <div ref={chatContainerRef} className="min-h-0 flex-1 overflow-y-auto px-2 py-1 space-y-1 no-scrollbar scroll-smooth">
+                <div ref={chatContainerRef} className="min-h-0 flex-1 overflow-y-auto px-1.5 py-1.5 space-y-1.5 no-scrollbar scroll-smooth">
                   {visibleMessages.length === 0 ? (
                     <div className="flex h-full items-center justify-center text-center text-white/40"><p className="text-[10px] font-medium">{announcement || "Welcome to the room!"}</p></div>
                   ) : (
@@ -378,11 +378,11 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
                       const avatar = m.user?.avatar || m.sender_avatar;
                       const fallback = (m.user?.username || m.sender_username || "U").trim().charAt(0).toUpperCase(); 
                       return (
-                        <div key={m.id} className="flex min-w-0 items-start gap-1 text-[10px]">
+                        <div key={m.id} className="flex min-w-0 items-start gap-1.5 text-[10px]">
                           <div className="grid h-3.5 w-3.5 shrink-0 overflow-hidden rounded-full bg-amber-500/20 text-[7px] font-bold text-amber-300 place-items-center border border-amber-500/30">
                             {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = "none"; }} /> : fallback}
                           </div>
-                          <div className="min-w-0 flex-1 break-words text-white/90">
+                          <div className="min-w-0 flex-1 break-words rounded-lg rounded-tl-sm border border-white/10 bg-black/35 px-2 py-1 text-white/90 shadow-sm backdrop-blur-sm">
                             <span className="mr-1 font-bold text-amber-200">{m.user?.username || m.sender_username || "User"}</span>
                             {cpBadgesByUser[m.user_id || ""] && <CpChatBadge level={cpBadgesByUser[m.user_id || ""]!.cp_level} levelName={cpBadgesByUser[m.user_id || ""]!.cp_level_name} partnerName={cpBadgesByUser[m.user_id || ""]!.partner_username} ringIcon={cpBadgesByUser[m.user_id || ""]!.badge_url} size="sm" />}
                             <span className="ml-1">{m.text || m.message || ""}</span>
@@ -392,7 +392,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
                     })
                   )}
                 </div>
-                <div onClick={() => { if (!roomSettings.chat_enabled) return; closeRoomSheets(); setShowMiniInputPopup(true); }} className={cn("mx-1.5 mb-1.5 flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 shadow-inner cursor-pointer select-none", !roomSettings.chat_enabled && "opacity-50")}>
+                <div onClick={() => { if (!roomSettings.chat_enabled) return; closeRoomSheets(); setShowMiniInputPopup(true); }} className={cn("mx-1.5 mb-1.5 flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-amber-300/25 bg-black/35 px-3 shadow-sm backdrop-blur-md cursor-pointer select-none", !roomSettings.chat_enabled && "opacity-50")}>
                   <span className="min-w-0 flex-1 text-[10px] font-medium text-white/40 truncate">{roomSettings.chat_enabled ? "Say something..." : "Chat disabled"}</span>
                   <Smile className="h-3 w-3 shrink-0" style={{ color: primaryThemeColor }} />
                 </div>
