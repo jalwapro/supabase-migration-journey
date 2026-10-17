@@ -1,6 +1,8 @@
 const CACHE_ASSETS = "jalwa-assets-v1"; // Must match src/lib/assetCache.ts
 const CACHE_LEGACY_ASSETS = "jalwa-assets-v2"; // Preserve assets cached by older workers
 const CACHE_SHELL = "jalwa-shell-v2";
+const CACHE_PUBLIC_DATA = "jalwa-public-data-v1";
+const PUBLIC_MANIFEST_PATH = "/api/public/asset-manifest";
 
 // Static assets regex: JS chunks, CSS, fonts, images, audio, video
 const MANAGED_MEDIA = /\.(mp4|webm|mov|svga|svg|png|jpe?g|gif|webp|avif|mp3|wav|ogg|m4a)(\?.*)?$/i;
@@ -49,7 +51,7 @@ self.addEventListener("activate", (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_ASSETS && key !== CACHE_LEGACY_ASSETS && key !== CACHE_SHELL) {
+          if (key !== CACHE_ASSETS && key !== CACHE_LEGACY_ASSETS && key !== CACHE_SHELL && key !== CACHE_PUBLIC_DATA) {
             return caches.delete(key);
           }
         })
@@ -65,7 +67,40 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
-  // Skip API calls, livekit, Supabase REST, and WebSocket connections
+  // Cache only the explicitly public, versioned asset manifest. Never cache
+  // authenticated APIs, balances, messages, realtime counts, or LiveKit traffic.
+  // A cached manifest lets the asset warmer find already-downloaded files offline.
+  if (url.origin === self.location.origin && url.pathname === PUBLIC_MANIFEST_PATH) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_PUBLIC_DATA);
+      const cached = await cache.match(request);
+      const refresh = fetch(request).then(async (response) => {
+        if (response.status === 200 && response.type !== "opaque") {
+          const contentType = response.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            await cache.put(request, response.clone());
+          }
+        }
+        return response;
+      });
+      if (cached) {
+        // Serve instantly from disk and refresh the manifest in the background.
+        event.waitUntil(refresh.then(() => undefined).catch(() => undefined));
+        return cached;
+      }
+      try {
+        return await refresh;
+      } catch {
+        return new Response(JSON.stringify({ assets: [] }), {
+          status: 200,
+          headers: { "Content-Type": "application/json; charset=utf-8", "X-Jalwa-Offline": "1" },
+        });
+      }
+    })());
+    return;
+  }
+
+  // Skip private APIs, Supabase REST/auth/realtime, and LiveKit traffic.
   if (
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/rest/") ||
