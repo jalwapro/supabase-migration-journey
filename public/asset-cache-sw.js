@@ -2,7 +2,6 @@ const CACHE_ASSETS = "jalwa-assets-v1"; // Must match src/lib/assetCache.ts
 const CACHE_LEGACY_ASSETS = "jalwa-assets-v2"; // Preserve assets cached by older workers
 const CACHE_SHELL = "jalwa-shell-v2";
 const CACHE_PUBLIC_DATA = "jalwa-public-data-v1";
-const CACHE_PUBLIC_DATA = "jalwa-public-data-v1";
 const PUBLIC_MANIFEST_PATH = "/api/public/asset-manifest";
 
 // Static assets regex: JS chunks, CSS, fonts, images, audio, video
