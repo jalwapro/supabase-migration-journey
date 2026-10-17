@@ -365,12 +365,12 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
           
           <div data-jalwa-live-component="voice.announcement" className="shrink-0 flex flex-col gap-1 px-2 pb-0.5">
             <section data-voice-room-lower-panel="true" className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
-              <div className="flex min-w-0 max-h-[190px] flex-col overflow-hidden rounded-xl border border-white/10 bg-gradient-to-t from-black/45 via-black/20 to-black/5 shadow-none backdrop-blur-[2px]">
-                <div className="flex h-6 shrink-0 items-center gap-1.5 border-b border-white/10 px-2 bg-amber-500/10 text-amber-200">
+              <div className="pointer-events-auto absolute bottom-1 left-1 z-30 flex w-[min(68%,280px)] max-h-[145px] min-w-0 flex-col overflow-visible border-0 bg-transparent shadow-none backdrop-blur-0">
+                <div className="flex h-5 shrink-0 items-center gap-1.5 px-1 text-amber-200/90 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                   <span className="text-[10px]">📢</span>
                   <p className="text-[9px] font-semibold truncate flex-1">{announcement || "Welcome to the room! Follow rules."}</p>
                 </div>
-                <div ref={chatContainerRef} className="min-h-0 flex-1 overflow-y-auto px-1.5 py-1.5 space-y-1.5 no-scrollbar scroll-smooth">
+                <div ref={chatContainerRef} className="min-h-0 max-h-[100px] flex-1 overflow-y-auto px-0.5 py-1 space-y-1.5 no-scrollbar scroll-smooth">
                   {visibleMessages.length === 0 ? (
                     <div className="flex h-full items-center justify-center text-center text-white/40"><p className="text-[10px] font-medium">{announcement || "Welcome to the room!"}</p></div>
                   ) : (
@@ -392,12 +392,12 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
                     })
                   )}
                 </div>
-                <div onClick={() => { if (!roomSettings.chat_enabled) return; closeRoomSheets(); setShowMiniInputPopup(true); }} className={cn("mx-1.5 mb-1.5 flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-amber-300/25 bg-black/35 px-3 shadow-sm backdrop-blur-md cursor-pointer select-none", !roomSettings.chat_enabled && "opacity-50")}>
+                <div onClick={() => { if (!roomSettings.chat_enabled) return; closeRoomSheets(); setShowMiniInputPopup(true); }} className={cn("mt-1 flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-amber-300/35 bg-black/45 px-3 shadow-sm backdrop-blur-sm cursor-pointer select-none", !roomSettings.chat_enabled && "opacity-50")}>
                   <span className="min-w-0 flex-1 text-[10px] font-medium text-white/40 truncate">{roomSettings.chat_enabled ? "Say something..." : "Chat disabled"}</span>
                   <Smile className="h-3 w-3 shrink-0" style={{ color: primaryThemeColor }} />
                 </div>
               </div>
-              <div className="flex min-w-0 flex-col justify-between items-end gap-1 max-h-[190px]">
+              <div className="col-start-2 flex min-w-0 flex-col justify-between items-end gap-1 max-h-[190px]">
                 <button type="button" onClick={tap(openPopularity)} style={{ height: "75px" }} className={cn(buttonClass, "relative group flex items-center justify-center bg-transparent border-0 p-0 w-full shrink-0 shadow-none")}>
                   <div className="relative h-[75px] w-[75px] flex items-center justify-center">
                     <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-[75px] w-[75px] object-contain animate-bounce drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
