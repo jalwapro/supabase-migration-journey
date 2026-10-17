@@ -30,6 +30,7 @@ type PublicProfile = {
 };
 
 type LevelFrameConfig = { level: number; frame_url: string | null; popup_frame_url: string | null };
+type CpRoomBadge = { user_id: string; partner_id: string; partner_username: string | null; partner_avatar: string | null; cp_level: number; cp_level_name: string; badge_url: string | null; intimacy_score: number };
 
 export function VoiceRoomMemberSheet({
   roomId,
@@ -66,12 +67,14 @@ export function VoiceRoomMemberSheet({
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [levelFrame, setLevelFrame] = useState<string | null>(null);
   const [popupFrame, setPopupFrame] = useState<string | null>(null);
+  const [cpBadge, setCpBadge] = useState<CpRoomBadge | null>(null);
 
   useEffect(() => {
     setProfileOpen(false);
     setMessageOpen(false);
     setMessage("");
     setProfile(null);
+    setCpBadge(null);
     const level = Math.max(1, Math.floor(Number(member?.level ?? 0)) || 1);
     setLevelFrame(frameForLevel(level));
     setPopupFrame(frameForLevel(level));
@@ -91,6 +94,22 @@ export function VoiceRoomMemberSheet({
         return;
       }
       if (data) setProfile(data as PublicProfile);
+    });
+    return () => { active = false; };
+  }, [member?.id]);
+
+  // Load the member's active CP partner for the room profile spotlight.
+  useEffect(() => {
+    if (!member?.id) return;
+    let active = true;
+    void supabase.rpc("cp_room_badges", { p_user_ids: [member.id] }).then(({ data, error }) => {
+      if (!active) return;
+      if (error) {
+        setCpBadge(null);
+        return;
+      }
+      const match = (data as CpRoomBadge[] | null)?.find((row) => row.user_id === member.id) ?? null;
+      setCpBadge(match);
     });
     return () => { active = false; };
   }, [member?.id]);
@@ -254,6 +273,26 @@ export function VoiceRoomMemberSheet({
         </div>
 
         <GiftReceivedStats userId={member.id} compact />
+
+        {cpBadge && (
+          <div className="mt-3 overflow-hidden rounded-2xl border border-pink-300/25 bg-gradient-to-r from-rose-950/80 via-fuchsia-950/60 to-violet-950/80 p-3 shadow-[0_0_24px_rgba(236,72,153,.12)]">
+            <div className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[.16em] text-pink-200">
+              <span>❤️</span><span>Soulmate / CP</span>
+              {cpBadge.badge_url && <img src={resolveAssetUrl(cpBadge.badge_url)} alt="CP badge" className="ml-auto h-6 w-6 object-contain" />}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="relative h-12 w-12 shrink-0">
+                {cpBadge.partner_avatar ? <img src={cpBadge.partner_avatar} alt={cpBadge.partner_username ?? "CP partner"} className="h-12 w-12 rounded-full border-2 border-pink-300/70 object-cover shadow-lg" /> : <div className="grid h-12 w-12 place-items-center rounded-full border-2 border-pink-300/70 bg-fuchsia-900 text-xl">❤️</div>}
+                <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border border-pink-200/40 bg-rose-600 text-[10px]">♥</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-black text-white">{cpBadge.partner_username ?? "CP Partner"}</div>
+                <div className="mt-0.5 text-[10px] font-bold text-pink-200">{cpBadge.cp_level_name || `CP Level ${cpBadge.cp_level}`} · Level {cpBadge.cp_level}</div>
+                <div className="mt-0.5 text-[10px] text-white/55">{Number(cpBadge.intimacy_score ?? 0).toLocaleString()} intimacy</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="mt-3 grid grid-cols-3 gap-2">
           <button type="button" onClick={() => void openProfile()} className="h-11 rounded-2xl border border-white/10 bg-white/7 text-xs font-black">Profile</button>
