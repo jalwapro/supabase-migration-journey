@@ -67,6 +67,36 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
 
+  // Cache only the public, non-user-specific asset catalog. All other APIs
+  // (especially auth, balances, messages, room counts, and LiveKit) bypass caching.
+  if (url.origin === self.location.origin && url.pathname === "/api/public/asset-manifest") {
+    const cacheName = "jalwa-public-data-v1";
+    event.respondWith((async () => {
+      const cache = await caches.open(cacheName);
+      const cached = await cache.match(request);
+      const refresh = fetch(request).then(async (response) => {
+        const type = response.headers.get("content-type") || "";
+        if (response.status === 200 && response.type !== "opaque" && type.includes("application/json")) {
+          await cache.put(request, response.clone());
+        }
+        return response;
+      });
+      if (cached) {
+        event.waitUntil(refresh.then(() => undefined).catch(() => undefined));
+        return cached;
+      }
+      try {
+        return await refresh;
+      } catch {
+        return new Response(JSON.stringify({ assets: [] }), {
+          status: 200,
+          headers: { "Content-Type": "application/json; charset=utf-8", "X-Jalwa-Offline": "1" },
+        });
+      }
+    })());
+    return;
+  }
+
   // Skip API calls, livekit, Supabase REST, and WebSocket connections
   if (
     url.pathname.startsWith("/api/") ||
@@ -79,21 +109,29 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 0. App navigation -> network-first, then the last cached page/Home shell.
+  // 0. Native Android cold start: return the last cached Home shell immediately.
+  // Only "/" is cache-first because it is the app shell; other route HTML can be
+  // user-specific and remains network-first. Refresh the shell in the background.
   if (request.mode === "navigate") {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_SHELL);
+      const isHome = url.origin === self.location.origin && url.pathname === "/" && !url.search;
+      if (isHome) {
+        const cachedHome = await cache.match(new URL("/", self.location.origin).toString());
+        const refreshHome = fetch(request).then(async (response) => {
+          if (response.ok && response.type !== "opaque") {
+            await cache.put(new URL("/", self.location.origin).toString(), response.clone());
+          }
+          return response;
+        });
+        event.waitUntil(refreshHome.then(() => undefined).catch(() => undefined));
+        if (cachedHome) return cachedHome;
+        try { return await refreshHome; } catch {}
+      }
       try {
         const response = await fetch(request);
         if (response.ok && response.type !== "opaque") {
-          event.waitUntil((async () => {
-            try {
-              await cache.put(request, response.clone());
-              if (url.origin === self.location.origin && url.pathname === "/") {
-                await cache.put(new URL("/", self.location.origin).toString(), response.clone());
-              }
-            } catch {}
-          })());
+          event.waitUntil(cache.put(request, response.clone()).catch(() => undefined));
         }
         return response;
       } catch {
